@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecionando...</title>
 
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel -->
     <script>
         !function(f,b,e,v,n,t,s){
             if(f.fbq)return;
@@ -23,7 +23,7 @@
             t.src='https://connect.facebook.net/en_US/fbevents.js';
             s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s);
-        }(window, document,'script');
+        }(window, document, 'script');
 
         fbq('init', '880769331739336');
         fbq('track', 'PageView');
@@ -33,7 +33,7 @@
         <img height="1" width="1" style="display:none"
              src="https://www.facebook.com/tr?id=880769331739336&ev=PageView&noscript=1"/>
     </noscript>
-    <!-- End Meta Pixel Code -->
+    <!-- End Meta Pixel -->
 
     <style>
         *{
@@ -52,13 +52,13 @@
         }
 
         .card{
-            background:#fff;
-            padding:40px;
-            border-radius:16px;
-            box-shadow:0 15px 35px rgba(0,0,0,.15);
-            text-align:center;
             width:90%;
             max-width:420px;
+            background:#fff;
+            padding:40px;
+            border-radius:18px;
+            box-shadow:0 15px 35px rgba(0,0,0,.15);
+            text-align:center;
         }
 
         h2{
@@ -74,18 +74,18 @@
         .btn{
             display:inline-block;
             width:100%;
-            padding:16px;
+            padding:15px;
             background:#25D366;
             color:#fff;
             text-decoration:none;
+            border-radius:10px;
             font-size:18px;
             font-weight:bold;
-            border-radius:10px;
             transition:.2s;
         }
 
         .btn:hover{
-            background:#1ebd59;
+            background:#1fb157;
         }
     </style>
 
@@ -93,7 +93,7 @@
         window.onload = function () {
 
             const numero = "5598985840529";
-            const mensagem = encodeURIComponent("Quero o ingresso para a festa das atléticas.");
+            const mensagem = encodeURIComponent("Olá, quero garantir o meu ingresso para o baile das atléticas!");
 
             window.location.replace(
                 `https://wa.me/${numero}?text=${mensagem}`
@@ -103,7 +103,6 @@
     </script>
 
 </head>
-
 <body>
 
 <div class="card">
@@ -113,7 +112,7 @@
     <p>Você está sendo redirecionado automaticamente.</p>
 
     <a class="btn"
-       href="https://wa.me/5598985840529?text=Quero%20o%20ingresso%20para%20a%20festa%20das%20atl%C3%A9ticas.">
+       href="https://wa.me/5598985840529?text=Ol%C3%A1%2C%20quero%20garantir%20o%20meu%20ingresso%20para%20o%20baile%20das%20atl%C3%A9ticas!">
         Abrir WhatsApp
     </a>
 
