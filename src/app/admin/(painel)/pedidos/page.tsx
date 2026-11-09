@@ -12,12 +12,12 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
   const staff = await exigirStaff("pedidos");
   const sp = await searchParams;
   let q = db().from("glam_pedidos")
-    .select("id,codigo,status,canal,metodo,total_centavos,desconto_centavos,criado_em,pago_em,motivo_cancelamento, cliente:glam_clientes!inner(nome,email,whatsapp), festa:glam_festas(titulo), promoter:glam_promoters(nome), cupom:glam_cupons(codigo), itens:glam_pedido_itens(quantidade, lote:glam_lotes(nome))")
+    .select("id,codigo,status,canal,metodo,total_centavos,desconto_centavos,criado_em,pago_em,motivo_cancelamento,em_revisao,motivo_revisao, cliente:glam_clientes!inner(nome,email,whatsapp), festa:glam_festas(titulo), promoter:glam_promoters(nome), cupom:glam_cupons(codigo), itens:glam_pedido_itens(quantidade, lote:glam_lotes(nome))")
     .order("criado_em", { ascending: false }).limit(150);
   if (sp.festa) q = q.eq("festa_id", sp.festa);
   if (sp.status) q = q.eq("status", sp.status);
   if (sp.q) {
-    const termo = sp.q.trim();
+    const termo = sp.q.trim().slice(0, 80).replace(/[%_,()*\\]/g, " ");
     q = /^GLM-/i.test(termo) ? q.ilike("codigo", termo) : q.or(`nome.ilike.%${termo}%,email.ilike.%${termo}%`, { referencedTable: "glam_clientes" });
   }
   const [{ data: pedidos }, { data: festas }] = await Promise.all([q, db().from("glam_festas").select("id,titulo").order("data_inicio", { ascending: false }).limit(50)]);
@@ -43,6 +43,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                 <span className="min-w-0 flex-1 truncate">{p.cliente.nome} <span className="text-fumaca">· {p.festa.titulo}</span></span>
                 <span className="text-sm">{brl(p.total_centavos)}</span>
                 <Selo cor={st.c}>{st.t}</Selo>
+                {p.em_revisao && <Selo cor="perigo">em revisão</Selo>}
                 <span className="w-full text-xs text-fumaca sm:w-auto">{dataHora(p.criado_em)}</span>
               </summary>
               <div className="mt-4 grid gap-4 border-t border-linha pt-4 text-sm md:grid-cols-2">
@@ -53,6 +54,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                   {p.cupom && <p>Cupom {p.cupom.codigo} (−{brl(p.desconto_centavos)})</p>}
                   {p.promoter && <p>Promoter: {p.promoter.nome}</p>}
                   {p.motivo_cancelamento && <p className="text-perigo">Cancelado: {p.motivo_cancelamento}</p>}
+                  {p.motivo_revisao && <p className="text-perigo">Revisão: {p.motivo_revisao} — confira no app do PagBank antes de confirmar manualmente.</p>}
                   <Link href={`/pedido/${p.id}`} target="_blank" className="text-ouro underline">Abrir página do pedido ↗</Link>
                 </div>
                 <div className="flex flex-col gap-3">

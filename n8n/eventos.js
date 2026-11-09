@@ -39,4 +39,8 @@ if (b.evento === 'lote_esgotado') {
   zap(casa.whatsapp_dono, txt);
   email(casa.email_dono, `Lote esgotado: ${l.setor} · ${l.nome}`, 'Lote esgotado 🔥', `<p><b>${esc(f.titulo || '')}</b><br>${esc(l.setor)} · ${esc(l.nome)} — ${esc(l.capacidade)} unidades vendidas.</p><p align="center" style="text-align:center">${botao(site + '/admin/festas', 'Abrir painel')}</p>`);
 }
+if (b.evento === 'alerta_seguranca') {
+  zap(casa.whatsapp_dono, b.texto);
+  email(casa.email_dono, 'Alerta de segurança — GLAM', 'Alerta de segurança', `<p>${esc(b.texto)}</p><p style="font-size:12px;color:#a39d92">Enviado automaticamente pelo sistema de ingressos.</p>`);
+}
 return out;

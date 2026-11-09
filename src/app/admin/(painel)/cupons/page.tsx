@@ -47,7 +47,8 @@ export default async function Cupons() {
           </div>
           <select name="festa_id" className="campo" defaultValue=""><option value="">Todas as festas</option>{(festas || []).map((f: any) => <option key={f.id} value={f.id}>{f.titulo}</option>)}</select>
           <select name="lote_id" className="campo" defaultValue=""><option value="">Qualquer lote</option>{(festas || []).flatMap((f: any) => f.lotes.map((l: any) => <option key={l.id} value={l.id}>{f.titulo} · {l.nome}</option>))}</select>
-          <input name="usos_max" type="number" min={1} className="campo" placeholder="Limite de usos (vazio = sem limite)" />
+          <input name="usos_max" type="number" min={1} className="campo" placeholder="Limite total de usos (vazio = sem limite)" />
+          <input name="limite_por_cliente" type="number" min={1} className="campo" placeholder="Usos por cliente (vazio = sem limite)" />
           <div><label className="rotulo">Válido até</label><input name="valido_ate" type="datetime-local" className="campo" /></div>
           <Enviar className="btn-ouro ouro-gradiente w-full">Criar cupom</Enviar>
         </FormAcao>

@@ -24,7 +24,9 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; min-h
 ::selection { background: var(--color-ouro); color: var(--color-noir); }
 
 /* Dourado discreto: cor sólida, sem brilho animado */
-.ouro-gradiente { background: var(--color-ouro); }
+.ouro-gradiente { background: linear-gradient(120deg, #a8864a 0%, #d6b87e 45%, #ecd9ae 60%, #b8955a 100%); }
+.logo-glam.logo-ouro { background: linear-gradient(120deg, #a8864a 0%, #d6b87e 45%, #ecd9ae 60%, #b8955a 100%); }
+.linha-dourada { height: 1px; background: linear-gradient(90deg, transparent, rgb(212 184 126 / .65), transparent); }
 .texto-ouro { color: var(--color-ouro); }
 .brilho-ouro { }
 
@@ -78,7 +80,7 @@ select.campo { appearance: none; background-image: linear-gradient(45deg, transp
 @keyframes palavra { to { opacity: 1; transform: none } }
 .intro-sai { animation: introSai 1s cubic-bezier(.7,0,.3,1) forwards; }
 @keyframes introSai { to { opacity: 0; transform: scale(1.04); filter: blur(6px); visibility: hidden } }
-.particula { position: absolute; width: 2px; height: 2px; border-radius: 99px; background: rgb(245 239 228 / .7); box-shadow: 0 0 6px 1px rgb(245 239 228 / .25); animation: sobe linear infinite; opacity: 0; }
+.particula { position: absolute; width: 2px; height: 2px; border-radius: 99px; background: rgb(230 205 150 / .75); box-shadow: 0 0 6px 1px rgb(230 205 150 / .3); animation: sobe linear infinite; opacity: 0; }
 @keyframes sobe { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translateY(-80vh); opacity: 0 } }
 
 .surge { animation: surge .9s cubic-bezier(.2,.8,.2,1) both; }

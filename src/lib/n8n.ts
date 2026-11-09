@@ -1,13 +1,15 @@
 import "server-only";
 import { env } from "./env";
 import { db } from "./supabase-admin";
+import { iguaisSeguro } from "./seguranca";
 
 export type EventoGlam =
   | "pedido_pago"
   | "acesso_link"
   | "ingresso_transferido"
   | "lote_esgotado"
-  | "pedido_cancelado";
+  | "pedido_cancelado"
+  | "alerta_seguranca";
 
 /** Envia um evento para o fluxo "GLAM | Eventos do site" no n8n. Nunca derruba a requisição. */
 export async function dispararN8n(evento: EventoGlam, dados: Record<string, unknown>, referencia?: string) {
@@ -40,5 +42,5 @@ export async function dispararN8n(evento: EventoGlam, dados: Record<string, unkn
 
 /** Valida chamadas vindas do n8n. */
 export function automacaoAutorizada(req: Request) {
-  return !!env.automacaoSecret && req.headers.get("x-glam-secret") === env.automacaoSecret;
+  return env.automacaoSecret.length >= 32 && iguaisSeguro(req.headers.get("x-glam-secret"), env.automacaoSecret);
 }

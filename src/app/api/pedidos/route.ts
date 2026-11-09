@@ -1,54 +1,56 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase-admin";
-import { cpfValido, soDigitos } from "@/lib/format";
-import { salvarCliente } from "@/lib/clientes";
+import { soDigitos } from "@/lib/format";
 import { traduzirErro } from "@/lib/pedidos";
+import { salvarCliente } from "@/lib/clientes";
+import { hmac } from "@/lib/crypto";
+import { CriarPedido, lerCorpo } from "@/lib/esquemas";
+import { dentroDoLimite, falhaInterna, ipDe, logSeguranca, origemValida, respostaLimite, turnstileOk } from "@/lib/seguranca";
+import { novoAcesso, nomeCookiePedido, opcoesCookiePedido } from "@/lib/acesso-pedido";
 
 export const dynamic = "force-dynamic";
 
-type Corpo = {
-  festa_id: string;
-  cliente: { nome: string; email: string; whatsapp: string; cpf: string };
-  itens: { lote_id: string; quantidade: number; nomes?: string[] }[];
-  cupom?: string | null;
-  promoter?: string | null;
-};
-
 export async function POST(req: Request) {
-  let b: Corpo;
-  try { b = await req.json(); } catch { return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 }); }
+  if (!origemValida(req)) return NextResponse.json({ erro: "Requisição inválida." }, { status: 403 });
+  const ip = ipDe(req.headers);
+  if (!(await dentroDoLimite(`pedido:ip:${ip}`, 20, 3600))) return respostaLimite();
 
-  const c = b?.cliente;
-  if (!b?.festa_id || !Array.isArray(b.itens) || !c) return NextResponse.json({ erro: "Dados incompletos." }, { status: 400 });
-  if (!c.nome || c.nome.trim().length < 3) return NextResponse.json({ erro: "Informe seu nome completo." }, { status: 400 });
-  if (!/^\S+@\S+\.\S+$/.test(c.email || "")) return NextResponse.json({ erro: "E-mail inválido." }, { status: 400 });
-  if (soDigitos(c.whatsapp).length < 10) return NextResponse.json({ erro: "WhatsApp inválido." }, { status: 400 });
-  if (!cpfValido(c.cpf)) return NextResponse.json({ erro: "CPF inválido." }, { status: 400 });
-  if (b.itens.length > 10) return NextResponse.json({ erro: "Itens demais." }, { status: 400 });
+  const b = await lerCorpo(req, CriarPedido, 64_000);
+  if (!b) return NextResponse.json({ erro: "Dados inválidos. Confira os campos." }, { status: 400 });
+  if (b.site) { logSeguranca("honeypot", { rota: "pedidos", ip }); return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 }); }
+  if (!(await turnstileOk(b.turnstile, ip))) return NextResponse.json({ erro: "Confirme que você não é um robô." }, { status: 400 });
 
-  const itens = b.itens.map((i) => ({
-    lote_id: String(i.lote_id),
-    quantidade: Math.floor(Number(i.quantidade)),
-    nomes: (i.nomes || []).slice(0, 200).map((n) => String(n || "").trim().slice(0, 80)),
-  }));
+  // Antifraude: limite por CPF e por WhatsApp por hora
+  const cpfHash = hmac(soDigitos(b.cliente.cpf));
+  if (!(await dentroDoLimite(`pedido:cpf:${cpfHash}`, 8, 3600))) return respostaLimite();
+  if (!(await dentroDoLimite(`pedido:tel:${soDigitos(b.cliente.whatsapp)}`, 8, 3600))) return respostaLimite();
 
   try {
-    const clienteId = await salvarCliente(c);
-    const { data, error } = await db().rpc("glam_criar_pedido", {
+    const clienteId = await salvarCliente(b.cliente);
+    const acesso = novoAcesso();
+    const { data, error } = await db().rpc("glam_criar_pedido_v2", {
       p_festa_id: b.festa_id,
       p_cliente_id: clienteId,
-      p_itens: itens,
+      p_itens: b.itens.map((i) => ({ lote_id: i.lote_id, quantidade: i.quantidade, nomes: i.nomes || [] })),
       p_cupom: b.cupom || null,
       p_promoter: b.promoter || null,
       p_canal: "site",
       p_metodo: null,
       p_staff_id: null,
       p_ignorar_janela: false,
+      p_idempotencia: b.idempotencia,
+      p_acesso_hash: acesso.hash,
     });
-    if (error) return NextResponse.json({ erro: traduzirErro(error.message) }, { status: 409 });
-    return NextResponse.json(data);
+    if (error) {
+      const msg = error.message.startsWith("MUITAS_RESERVAS") ? "Você já tem reservas abertas. Pague ou aguarde elas expirarem." : traduzirErro(error.message);
+      return NextResponse.json({ erro: msg }, { status: 409 });
+    }
+    const r = data as { id: string; total: number; repetido?: boolean };
+    const res = NextResponse.json({ id: r.id, total: r.total });
+    if (!r.repetido) res.cookies.set(nomeCookiePedido(r.id), acesso.token, opcoesCookiePedido);
+    return res;
   } catch (e) {
-    console.error("criar pedido", e);
-    return NextResponse.json({ erro: "Não foi possível reservar agora. Tente novamente." }, { status: 500 });
+    const f = falhaInterna("criar_pedido", e);
+    return NextResponse.json({ erro: f.mensagem }, { status: 500 });
   }
 }

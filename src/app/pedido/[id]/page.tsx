@@ -7,6 +7,8 @@ import { modoDemo } from "@/lib/env";
 import { brl, dataLonga, hora, SETORES } from "@/lib/format";
 import { Pagamento } from "./Pagamento";
 import { RastreioCompra } from "./RastreioCompra";
+import { compradorDoPedido } from "@/lib/acesso-pedido";
+import { mascararEmail } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido", robots: { index: false } };
@@ -17,6 +19,8 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
   const p = await pedidoCompleto(id);
   if (!p) notFound();
   const casa = await configCasa();
+  const comprador = await compradorDoPedido(p.id, p.acesso_hash);
+  const emailMascarado = mascararEmail(p.cliente?.email);
   const expirado = p.status === "expirado" || (p.status === "pendente" && new Date(p.expira_em) < new Date());
 
   return (
@@ -52,10 +56,13 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full ouro-gradiente text-4xl text-noir">✓</div>
             <div>
               <h2 className="font-display text-4xl text-marfim">Pagamento aprovado!</h2>
-              <p className="mt-2 text-sm text-fumaca">Enviamos os ingressos para <b className="text-marfim">{p.cliente?.email}</b> e para o seu WhatsApp.</p>
+              <p className="mt-2 text-sm text-fumaca">Enviamos os ingressos para <b className="text-marfim">{comprador ? p.cliente?.email : emailMascarado}</b> e para o WhatsApp cadastrado.</p>
             </div>
+            {!comprador && (
+              <p className="cartao p-5 text-sm text-fumaca">Por segurança, os QR Codes só aparecem no aparelho que fez a compra. Use o link do e-mail ou entre em <a href="/meus-ingressos" className="underline">Meus ingressos</a>.</p>
+            )}
             <div className="grid gap-3 text-left">
-              {p.ingressos.map((t: any) => (
+              {comprador && p.ingressos.map((t: any) => (
                 <Link key={t.id} href={`/ingresso/${t.codigo}`} className="cartao flex items-center justify-between p-4 transition hover:border-marfim/25">
                   <div>
                     <p className="font-display text-xl text-marfim">{t.nome_titular}</p>

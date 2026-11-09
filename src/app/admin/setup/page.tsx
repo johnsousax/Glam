@@ -13,9 +13,9 @@ export default async function Setup() {
   return (
     <main className="relative z-10 flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <Logo className="mx-auto w-40" animado />
+        <Logo className="mx-auto w-40" dourado />
         <h1 className="mt-6 text-center font-display text-3xl">Primeiro acesso</h1>
-        <p className="mt-2 text-center text-sm text-fumaca">Crie a conta do dono da casa. Depois, adicione a equipe pelo painel.</p>
+        <p className="mt-2 text-center text-sm text-fumaca">Crie a conta do dono da casa com o código de instalação (variável GLAM_SETUP_TOKEN na Vercel).</p>
         <SetupForm />
       </div>
     </main>

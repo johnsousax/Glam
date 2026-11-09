@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "./env";
 import { soDigitos } from "./format";
+import { createHmac } from "crypto";
 
 // API de Pedidos do PagBank: https://developer.pagbank.com.br/reference/criar-pedido
 const BASE = () => (env.pagbankEnv === "production" ? "https://api.pagseguro.com" : "https://sandbox.api.pagseguro.com");
@@ -47,7 +48,11 @@ function customer(c: DadosCobranca["cliente"]) {
   };
 }
 
-const notificacao = () => [`${env.siteUrl}/api/webhooks/pagbank`];
+/** Token secreto na URL do aviso (o PagBank não assina com segredo nosso). */
+export function tokenWebhook() {
+  return createHmac("sha256", env.automacaoSecret || "sem-segredo").update("pagbank-webhook").digest("hex");
+}
+const notificacao = () => [`${env.siteUrl}/api/webhooks/pagbank?k=${tokenWebhook()}`];
 
 export async function criarPix(d: DadosCobranca, expiraEm: Date) {
   const order = await chamar("/orders", {
@@ -97,6 +102,7 @@ export async function criarCartao(d: DadosCobranca, cartaoCriptografado: string,
   });
   const charge = order.charges?.[0];
   return {
+    valorPago: Number(charge?.amount?.summary?.paid ?? charge?.amount?.value ?? 0),
     orderId: order.id as string,
     chargeId: charge?.id as string | undefined,
     status: (charge?.status || "DECLINED") as string, // PAID | AUTHORIZED | IN_ANALYSIS | DECLINED
@@ -108,7 +114,8 @@ export async function criarCartao(d: DadosCobranca, cartaoCriptografado: string,
 export async function consultarPedido(orderId: string) {
   const order = await chamar(`/orders/${encodeURIComponent(orderId)}`);
   const pago = (order.charges || []).find((c: any) => c.status === "PAID");
-  return { referencia: order.reference_id as string, pago: !!pago, chargeId: pago?.id as string | undefined, metodo: pago?.payment_method?.type as string | undefined, order };
+  const valorPago = pago ? Number(pago.amount?.summary?.paid ?? pago.amount?.value ?? 0) : 0;
+  return { referencia: order.reference_id as string, pago: !!pago, valorPago, chargeId: pago?.id as string | undefined, metodo: pago?.payment_method?.type as string | undefined };
 }
 
 let chavePublicaCache: string | null = null;

@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   const staff = await staffDaApi("portaria");
   if (!staff) return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   const festa = new URL(req.url).searchParams.get("festa");
-  if (!festa) return NextResponse.json({ erro: "festa" }, { status: 400 });
+  if (!festa || !/^[0-9a-f-]{36}$/i.test(festa)) return NextResponse.json({ erro: "festa" }, { status: 400 });
   const todos: any[] = [];
   for (let de = 0; ; de += 1000) {
     const { data } = await db().from("glam_ingressos")

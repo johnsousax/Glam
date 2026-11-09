@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
+import { connection } from "next/server";
+import { Consentimento } from "@/components/Consentimento";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
 
@@ -18,19 +19,13 @@ export const viewport: Viewport = { themeColor: "#0a0908", width: "device-width"
 
 const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || "880769331739336";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await connection(); // renderização dinâmica: cada página recebe o nonce da CSP
   return (
     <html lang="pt-BR" className={`${cormorant.variable} ${montserrat.variable}`}>
       <body className="grao">
         {children}
-        {PIXEL && (
-          <Script id="meta-pixel" strategy="afterInteractive">{`
-            !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init','${PIXEL}');fbq('track','PageView');
-          `}</Script>
-        )}
+        <Consentimento pixelId={PIXEL} />
       </body>
     </html>
   );

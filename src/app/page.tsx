@@ -18,8 +18,9 @@ export default async function Home() {
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 sm:px-6 sm:pt-14">
         <div className="mb-10 text-center">
-          <p className="text-[0.65rem] uppercase tracking-[0.45em] text-fumaca">Ingressos</p>
+          <p className="text-[0.65rem] uppercase tracking-[0.45em] text-ouro">Ingressos</p>
           <h1 className="mt-2 font-display text-4xl text-marfim sm:text-5xl">Próximas festas</h1>
+          <div className="linha-dourada mx-auto mt-4 w-32" />
         </div>
 
         {festas.length === 0 ? (

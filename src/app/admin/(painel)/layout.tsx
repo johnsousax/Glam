@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { exigirStaff, pode } from "@/lib/staff";
-import { sair } from "../acoes";
+import { sair } from "../auth-acoes";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Painel", robots: { index: false } };
@@ -21,7 +21,7 @@ const MENU = [
 ] as const;
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
-  const staff = await exigirStaff();
+  const staff = await exigirStaff(undefined, { permitirSemMfa: true });
   const itens = MENU.filter((m) => !m.r || pode(staff, m.r));
   return (
     <div className="relative z-10 min-h-dvh lg:grid lg:grid-cols-[250px_1fr]">

@@ -8,7 +8,7 @@ export function Cabecalho() {
         <Link href="/" aria-label="Início"><Logo className="w-24" /></Link>
         <nav className="flex items-center gap-2 sm:gap-6">
           <Link href="/" className="hidden text-xs uppercase tracking-[0.25em] text-fumaca hover:text-marfim sm:inline">Festas</Link>
-          <Link href="/meus-ingressos" className="btn-linha !px-4 !py-2 !text-[0.65rem]">Meus ingressos</Link>
+          <Link href="/meus-ingressos" className="btn-linha !border-ouro/45 !px-4 !py-2 !text-[0.65rem] !text-ouro-claro hover:!border-ouro">Meus ingressos</Link>
         </nav>
       </div>
     </header>

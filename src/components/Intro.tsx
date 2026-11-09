@@ -23,20 +23,19 @@ export function Intro() {
   };
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-noir ${fase === "sai" ? "intro-sai" : ""}`} onClick={pular} aria-label="Abertura GLAM">
+    <div className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-noir ${fase === "sai" ? "intro-sai" : ""}`} onClick={pular} aria-label="Abertura GLAM (toque para entrar)" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === "Escape") pular(); }}>
       {Array.from({ length: 12 }).map((_, i) => (
         <span key={i} className="particula" style={{ left: `${(i * 37 + 9) % 100}%`, bottom: `-${(i * 13) % 20}px`, animationDuration: `${6 + (i % 5)}s`, animationDelay: `${(i % 6) * 0.45}s` }} />
       ))}
       <div className="relative flex flex-col items-center px-6 text-center">
-        <Logo className="intro-logo w-[min(70vw,400px)]" />
-        <div className="intro-raio linha-ouro mt-8 w-[min(80vw,480px)] origin-center" />
+        <Logo dourado className="intro-logo w-[min(70vw,400px)]" />
+        <div className="intro-raio linha-dourada mt-8 w-[min(80vw,480px)] origin-center" />
         <p className="intro-frase mt-7 font-display text-[clamp(1.5rem,5vw,2.5rem)] italic leading-tight text-marfim/90">
           {FRASE.map((p, i) => (
             <span key={i} style={{ animationDelay: `${1.4 + i * 0.15}s` }} className={p === "amada" ? "texto-ouro" : ""}>{p}&nbsp;</span>
           ))}
         </p>
       </div>
-      <button className="absolute bottom-8 text-[0.65rem] uppercase tracking-[0.35em] text-fumaca/60 hover:text-marfim">Pular</button>
     </div>
   );
 }

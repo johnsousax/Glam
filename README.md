@@ -18,6 +18,8 @@ painel da casa e automações no n8n (e-mail + WhatsApp).
 | WhatsApp | Evolution API (no n8n) |
 
 ### Segurança
+Padrão completo em `SECURITY.md` e relatório da auditoria em `docs/RELATORIO-SEGURANCA.md`.
+
 - Reserva atômica no banco (`glam_criar_pedido` com trava): sem venda acima da lotação.
 - Ingresso só é emitido depois que o PagBank confirma (o aviso do PagBank é reconsultado na API).
 - QR = 144 bits aleatórios; transferir gera um QR novo e o antigo deixa de valer.
@@ -30,7 +32,8 @@ painel da casa e automações no n8n (e-mail + WhatsApp).
 
 1. **Supabase → Vercel:** copie a chave `service_role` (Supabase › Project Settings › API Keys)
    e crie a variável `SUPABASE_SERVICE_ROLE_KEY` no projeto `glam-ingressos` da Vercel. Redeploy.
-2. **Primeiro acesso:** abra `/admin/setup` e crie a conta do dono. Depois, em `/admin/config`,
+2. **Primeiro acesso:** abra `/admin/setup` e crie a conta do dono usando o código de instalação
+   (variável `GLAM_SETUP_TOKEN` na Vercel). Ative a verificação em 2 etapas logo no primeiro login (obrigatória). Depois, em `/admin/config`,
    preencha WhatsApp do dono, e-mail do dono, remetente e a instância do Evolution.
 3. **PagBank:** gere o token (PagBank › Integrações) e crie `PAGBANK_TOKEN` na Vercel.
    Comece com `PAGBANK_ENV=sandbox`; para vender de verdade troque para `production`.

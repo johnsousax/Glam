@@ -3,12 +3,14 @@ import { Cabecalho } from "@/components/Cabecalho";
 import { db } from "@/lib/supabase-admin";
 import { sha256 } from "@/lib/crypto";
 import { dataLonga, hora, SETORES } from "@/lib/format";
+import { MeusDados } from "./MeusDados";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Meus ingressos", robots: { index: false } };
 
 export default async function ListaIngressos({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null;
   const { data: acesso } = await db().from("glam_acessos").select("*").eq("token_hash", sha256(token)).maybeSingle();
   const valido = acesso && new Date(acesso.expira_em) > new Date();
 
@@ -29,7 +31,7 @@ export default async function ListaIngressos({ params }: { params: Promise<{ tok
   const { data: ingressos } = await db()
     .from("glam_ingressos")
     .select("codigo,nome_titular,checkin_em,status, festa:glam_festas(titulo,data_inicio,slug), lote:glam_lotes(nome,setor), pedido:glam_pedidos!inner(status)")
-    .ilike("email_titular", acesso.email)
+    .eq("email_titular", acesso.email.toLowerCase())
     .eq("status", "ativo")
     .eq("pedido.status", "pago")
     .order("criado_em", { ascending: false });
@@ -66,6 +68,7 @@ export default async function ListaIngressos({ params }: { params: Promise<{ tok
             <div className="mt-4 space-y-3 opacity-60">{passados.map((i) => <Item key={i.codigo} i={i} />)}</div>
           </>
         )}
+        <MeusDados token={token} />
       </main>
     </>
   );

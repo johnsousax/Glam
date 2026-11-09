@@ -3,15 +3,21 @@ import { db } from "@/lib/supabase-admin";
 import { modoDemo } from "@/lib/env";
 import { decifrar } from "@/lib/crypto";
 import { criarCartao, criarPix, type DadosCobranca } from "@/lib/pagbank";
-import { confirmarPagamento } from "@/lib/pedidos";
-import { cpfValido, SETORES } from "@/lib/format";
+import { confirmarPagamento, confirmarPagamentoGateway } from "@/lib/pedidos";
+import { Pagar, lerCorpo } from "@/lib/esquemas";
+import { dentroDoLimite, falhaInterna, ipDe, origemValida, respostaLimite } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const b = await req.json().catch(() => ({}));
-  const metodo = b.metodo === "cartao" ? "cartao" : "pix";
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
+  if (!origemValida(req)) return NextResponse.json({ erro: "Requisição inválida." }, { status: 403 });
+  const ip = ipDe(req.headers);
+  if (!(await dentroDoLimite(`pagar:ip:${ip}`, 30, 3600)) || !(await dentroDoLimite(`pagar:pedido:${id}`, 10, 3600))) return respostaLimite();
+  const b = await lerCorpo(req, Pagar, 16_000);
+  if (!b) return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });
+  const metodo = b.metodo;
 
   const { data: p } = await db()
     .from("glam_pedidos")
@@ -41,10 +47,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     totalCentavos: p.total_centavos,
     descricao: `GLAM ${p.festa.titulo}`,
     cliente: { nome: p.cliente.nome, email: p.cliente.email, cpf, whatsapp: p.cliente.whatsapp },
-    // Itens com desconto distribuído proporcionalmente (PagBank exige soma = total)
+    // Um item com o total já descontado (o PagBank exige soma dos itens = total)
     itens: [{ referencia: p.codigo, nome: `Ingressos ${p.festa.titulo}`, quantidade: 1, unitarioCentavos: p.total_centavos }],
   };
-  void SETORES;
 
   try {
     if (metodo === "pix") {
@@ -58,10 +63,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ status: "pendente", copia_cola: pix.copiaCola, qr_url: pix.qrUrl, expira_em: p.expira_em });
     }
 
-    // Cartão
-    const titularNome = String(b.titular_nome || "").trim();
-    const titularCpf = String(b.titular_cpf || "");
-    if (!titularNome || !cpfValido(titularCpf)) return NextResponse.json({ erro: "Confira o nome e o CPF do titular do cartão." }, { status: 400 });
+    // Cartão (o número nunca passa por aqui: chega criptografado pelo SDK do PagBank no navegador)
+    if (b.metodo !== "cartao") return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });
+    const titularNome = b.titular_nome;
+    const titularCpf = b.titular_cpf;
     if (modoDemo()) {
       await db().from("glam_pedidos").update({ metodo: "cartao" }).eq("id", id);
       await confirmarPagamento(p.id, "DEMO", "cartao");
@@ -71,15 +76,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const r = await criarCartao(cobranca, String(b.cartao_criptografado), { nome: titularNome, cpf: titularCpf });
     await db().from("glam_pedidos").update({ metodo: "cartao", pagbank_order_id: r.orderId, pagbank_charge_id: r.chargeId }).eq("id", id);
     if (r.status === "PAID") {
-      await confirmarPagamento(p.id, r.chargeId, "cartao");
-      return NextResponse.json({ status: "pago" });
+      const ok = await confirmarPagamentoGateway(p.id, r.valorPago, r.chargeId, "cartao");
+      return NextResponse.json(ok ? { status: "pago" } : { status: "analise", mensagem: "Pagamento em análise. Você recebe o ingresso assim que for conferido." });
     }
     if (r.status === "IN_ANALYSIS" || r.status === "AUTHORIZED") {
       return NextResponse.json({ status: "analise", mensagem: "Pagamento em análise pelo PagBank. Você recebe o ingresso assim que for aprovado." });
     }
     return NextResponse.json({ erro: r.motivo ? `Cartão recusado: ${r.motivo}` : "Cartão recusado. Tente outro cartão ou pague com Pix." }, { status: 402 });
   } catch (e) {
-    console.error("pagar", e);
-    return NextResponse.json({ erro: "Não foi possível falar com o PagBank agora. Tente novamente em instantes." }, { status: 502 });
+    const f = falhaInterna("pagar", e);
+    return NextResponse.json({ erro: `Não foi possível falar com o PagBank agora. Tente de novo. (${f.ref})` }, { status: 502 });
   }
 }

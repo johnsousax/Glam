@@ -27,9 +27,10 @@ export default async function PaginaIngresso({ params }: { params: Promise<{ cod
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-md px-4 py-10">
         <article className="surge relative overflow-hidden rounded-[1.75rem] border border-linha bg-gradient-to-b from-grafite to-carvao">
+          <div className="ouro-gradiente h-1" />
           
           <div className="space-y-1 p-6 text-center">
-            <Logo className="mx-auto w-24" />
+            <Logo dourado className="mx-auto w-24" />
             <h1 className="pt-3 font-display text-3xl text-marfim">{t.festa.titulo}</h1>
             <p className="text-xs uppercase tracking-[0.25em] text-fumaca">{dataLonga(t.festa.data_inicio)} · {hora(t.festa.data_inicio)}</p>
           </div>

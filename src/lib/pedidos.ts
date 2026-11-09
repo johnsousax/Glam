@@ -21,6 +21,9 @@ const ERROS: Record<string, string> = {
   CUPOM_EXPIRADO: "Cupom expirado.",
   CUPOM_ESGOTADO: "Este cupom atingiu o limite de usos.",
   CUPOM_NAO_SE_APLICA: "Este cupom não vale para os ingressos escolhidos.",
+  CUPOM_LIMITE_CLIENTE: "Você já usou este cupom o máximo de vezes permitido.",
+  MUITAS_RESERVAS: "Você já tem reservas abertas. Pague ou aguarde elas expirarem.",
+  IDEMPOTENCIA_INVALIDA: "Requisição inválida. Atualize a página.",
   PEDIDO_CANCELADO: "Este pedido foi cancelado.",
 };
 
@@ -69,6 +72,25 @@ export async function payloadNotificacao(pedidoId: string) {
     })),
     meus_ingressos_url: `${env.siteUrl}/meus-ingressos`,
   };
+}
+
+/**
+ * Pagamento vindo do gateway: só libera se o valor pago for exatamente o total do pedido.
+ * Valor divergente = pedido vai para revisão e o dono recebe alerta.
+ */
+export async function confirmarPagamentoGateway(pedidoId: string, valorPago: number, chargeId?: string | null, metodo?: string | null) {
+  const { data: p } = await db().from("glam_pedidos").select("codigo,total_centavos,status").eq("id", pedidoId).single();
+  if (!p) return null;
+  if (valorPago !== p.total_centavos) {
+    await db().from("glam_pedidos").update({ em_revisao: true, motivo_revisao: `Valor pago ${valorPago} ≠ total ${p.total_centavos}` }).eq("id", pedidoId);
+    const casa = await configCasa();
+    await dispararN8n("alerta_seguranca", {
+      casa: { whatsapp_dono: casa.whatsapp_dono, email_dono: casa.email_dono, email_remetente: casa.email_remetente, evolution_instancia: casa.evolution_instancia },
+      texto: `⚠️ Pedido ${p.codigo}: valor pago (${brl(valorPago)}) diferente do total (${brl(p.total_centavos)}). Ingressos NÃO liberados — revise no painel.`,
+    }, p.codigo);
+    return null;
+  }
+  return confirmarPagamento(pedidoId, chargeId, metodo);
 }
 
 /** Confirma o pagamento (idempotente), emite ingressos e dispara as automações. */

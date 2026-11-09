@@ -1,9 +1,10 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { brl, cpfValido, SETORES } from "@/lib/format";
 import type { SetorVitrine } from "@/lib/tipos";
 import { lerPromoterRef } from "@/components/PromoterRef";
+import { Turnstile, tokenTurnstile } from "@/components/Turnstile";
 
 function mascaraCpf(v: string) {
   const d = v.replace(/\D/g, "").slice(0, 11);
@@ -24,6 +25,8 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aceite, setAceite] = useState(false);
+  const [mel, setMel] = useState(""); // honeypot
+  const idem = useRef<string>(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
 
   const escolhidos = useMemo(
     () => setores.filter((s) => s.atual && (qtd[s.atual.id] || 0) > 0).map((s) => ({ setor: s.setor, lote: s.atual!, q: qtd[s.atual!.id] })),
@@ -54,6 +57,9 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
           cliente,
           cupom: cupom.trim() || null,
           promoter: lerPromoterRef(),
+          idempotencia: idem.current,
+          turnstile: tokenTurnstile(),
+          site: mel,
           itens: escolhidos.map((e) => ({
             lote_id: e.lote.id,
             quantidade: e.q,
@@ -62,7 +68,10 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
         }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.erro || "Não foi possível reservar.");
+      if (!r.ok) {
+        if (r.status !== 429) idem.current = crypto.randomUUID(); // nova tentativa = nova chave
+        throw new Error(j.erro || "Não foi possível reservar.");
+      }
       try { (window as any).fbq?.("track", "InitiateCheckout", { value: j.total / 100, currency: "BRL", content_name: festaTitulo }); } catch {}
       router.push(`/pedido/${j.id}`);
     } catch (e) {
@@ -74,14 +83,14 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
   return (
     <form onSubmit={finalizar} className="space-y-8">
       <section className="space-y-3">
-        <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-fumaca">1 · Ingressos</h2>
+        <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-ouro">1 · Ingressos</h2>
         {setores.length === 0 && <p className="cartao p-6 text-sm text-fumaca">Nenhum lote cadastrado ainda.</p>}
         {setores.map((s) => {
           const l = s.atual;
           const q = l ? qtd[l.id] || 0 : 0;
           const max = l ? Math.min(l.max_por_pedido, l.disponivel) : 0;
           return (
-            <div key={s.setor} className={`cartao p-5 transition ${q > 0 ? "!border-marfim/30" : ""}`}>
+            <div key={s.setor} className={`cartao p-5 transition ${q > 0 ? "!border-ouro/50" : ""}`}>
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-[0.65rem] uppercase tracking-[0.3em] text-fumaca">{SETORES[s.setor] || s.setor}</p>
@@ -133,7 +142,7 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
 
       {escolhidos.length > 0 && (
         <section className="surge space-y-4">
-          <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-fumaca">2 · Seus dados</h2>
+          <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-ouro">2 · Seus dados</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="rotulo">Nome completo</label>
@@ -172,9 +181,11 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
             {cupom && <p className="text-right text-[0.7rem] text-fumaca">Desconto do cupom aplicado na próxima etapa.</p>}
           </div>
 
+          <input type="text" name="site" value={mel} onChange={(e) => setMel(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+          <Turnstile />
           <label className="flex items-start gap-3 text-xs leading-relaxed text-fumaca">
             <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 accent-[#d4af6a]" />
-            <span>Li e concordo: o ingresso é pessoal, cada QR entra uma vez só, e meus dados (CPF protegido com criptografia) são usados apenas para emitir e validar o ingresso, conforme a LGPD.</span>
+            <span>Li e concordo com os <a href="/termos" target="_blank" className="underline">termos de compra</a> e a <a href="/privacidade" target="_blank" className="underline">política de privacidade</a>: o ingresso é pessoal, cada QR entra uma vez só e meus dados (CPF criptografado) são usados só para emitir e validar o ingresso.</span>
           </label>
 
           {erro && <p className="rounded-xl border border-perigo/40 bg-perigo/10 px-4 py-3 text-sm text-perigo">{erro}</p>}

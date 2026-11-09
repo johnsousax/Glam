@@ -13,7 +13,7 @@ export function Transferir({ codigo }: { codigo: string }) {
     e.preventDefault();
     setEnviando(true); setMsg(null);
     const r = await fetch(`/api/ingressos/${codigo}/transferir`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
-    const j = await r.json();
+    const j = await r.json().catch(() => ({ erro: "Muitas tentativas. Aguarde." }));
     setEnviando(false);
     if (!r.ok) return setMsg({ ok: false, texto: j.erro });
     setMsg({ ok: true, texto: "Ingresso transferido! O novo QR foi enviado para a pessoa." });

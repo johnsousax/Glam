@@ -50,7 +50,7 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
 
           <div className="surge space-y-8" style={{ animationDelay: ".1s" }}>
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.45em] text-fumaca">{dataLonga(festa.data_inicio)} · {hora(festa.data_inicio)}</p>
+              <p className="text-[0.65rem] uppercase tracking-[0.45em] text-ouro">{dataLonga(festa.data_inicio)} · {hora(festa.data_inicio)}</p>
               <h1 className="mt-3 font-display text-5xl leading-[1.02] text-marfim sm:text-6xl">{festa.titulo}</h1>
               {festa.subtitulo && <p className="mt-3 text-lg text-fumaca">{festa.subtitulo}</p>}
               <div className="mt-6 flex flex-wrap gap-2 text-[0.7rem] uppercase tracking-[0.2em]">
