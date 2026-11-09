@@ -74,17 +74,17 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
   return (
     <form onSubmit={finalizar} className="space-y-8">
       <section className="space-y-3">
-        <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-ouro">1 · Ingressos</h2>
+        <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-fumaca">1 · Ingressos</h2>
         {setores.length === 0 && <p className="cartao p-6 text-sm text-fumaca">Nenhum lote cadastrado ainda.</p>}
         {setores.map((s) => {
           const l = s.atual;
           const q = l ? qtd[l.id] || 0 : 0;
           const max = l ? Math.min(l.max_por_pedido, l.disponivel) : 0;
           return (
-            <div key={s.setor} className={`cartao p-5 transition ${q > 0 ? "!border-ouro/60" : ""}`}>
+            <div key={s.setor} className={`cartao p-5 transition ${q > 0 ? "!border-marfim/30" : ""}`}>
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[0.65rem] uppercase tracking-[0.3em] text-ouro">{SETORES[s.setor] || s.setor}</p>
+                  <p className="text-[0.65rem] uppercase tracking-[0.3em] text-fumaca">{SETORES[s.setor] || s.setor}</p>
                   {l ? (
                     <>
                       <p className="mt-1 font-display text-2xl text-marfim">{l.nome}</p>
@@ -105,9 +105,9 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
                   <div className="flex shrink-0 flex-col items-end gap-2">
                     <span className="texto-ouro text-lg font-semibold">{brl(l.preco_centavos)}</span>
                     <div className="flex items-center gap-3 rounded-full border border-linha bg-noir/60 p-1">
-                      <button type="button" aria-label="Menos" onClick={() => alterar(l.id, -1, max)} className="h-8 w-8 rounded-full text-lg text-ouro hover:bg-ouro/10">−</button>
+                      <button type="button" aria-label="Menos" onClick={() => alterar(l.id, -1, max)} className="h-8 w-8 rounded-full text-lg text-marfim hover:bg-marfim/10">−</button>
                       <span className="w-5 text-center font-semibold tabular-nums">{q}</span>
-                      <button type="button" aria-label="Mais" onClick={() => alterar(l.id, 1, max)} className="h-8 w-8 rounded-full text-lg text-ouro hover:bg-ouro/10">+</button>
+                      <button type="button" aria-label="Mais" onClick={() => alterar(l.id, 1, max)} className="h-8 w-8 rounded-full text-lg text-marfim hover:bg-marfim/10">+</button>
                     </div>
                   </div>
                 )}
@@ -133,7 +133,7 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
 
       {escolhidos.length > 0 && (
         <section className="surge space-y-4">
-          <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-ouro">2 · Seus dados</h2>
+          <h2 className="text-[0.7rem] uppercase tracking-[0.4em] text-fumaca">2 · Seus dados</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="rotulo">Nome completo</label>

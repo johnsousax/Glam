@@ -8,9 +8,8 @@ export function Rodape({ whatsapp, instagram }: { whatsapp?: string; instagram?:
         <Logo className="w-28 opacity-90" />
         <p className="font-display text-xl italic text-marfim/80">A casinha mais amada de São Luís</p>
         <div className="flex flex-wrap justify-center gap-6 text-xs uppercase tracking-[0.25em] text-fumaca">
-          {whatsapp && <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-ouro">WhatsApp</a>}
-          {instagram && <a href={`https://instagram.com/${instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="hover:text-ouro">Instagram</a>}
-          <Link href="/meus-ingressos" className="hover:text-ouro">Meus ingressos</Link>
+          {instagram && <a href={`https://instagram.com/${instagram.replace("@", "")}`} target="_blank" rel="noreferrer" className="hover:text-marfim">Instagram</a>}
+          <Link href="/meus-ingressos" className="hover:text-marfim">Meus ingressos</Link>
         </div>
         <p className="text-[0.65rem] tracking-[0.2em] text-fumaca/60">© {new Date().getFullYear()} GLAM HOUSE · SÃO LUÍS / MA · Compra 100% segura com PagBank</p>
       </div>

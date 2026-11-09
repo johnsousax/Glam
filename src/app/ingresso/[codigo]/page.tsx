@@ -26,14 +26,14 @@ export default async function PaginaIngresso({ params }: { params: Promise<{ cod
     <>
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-md px-4 py-10">
-        <article className="surge relative overflow-hidden rounded-[1.75rem] border border-ouro/40 bg-gradient-to-b from-grafite to-carvao shadow-[0_40px_120px_-40px_rgb(212_175_106/.5)]">
-          <div className="ouro-gradiente brilho-ouro h-1.5" />
+        <article className="surge relative overflow-hidden rounded-[1.75rem] border border-linha bg-gradient-to-b from-grafite to-carvao">
+          
           <div className="space-y-1 p-6 text-center">
             <Logo className="mx-auto w-24" />
             <h1 className="pt-3 font-display text-3xl text-marfim">{t.festa.titulo}</h1>
             <p className="text-xs uppercase tracking-[0.25em] text-fumaca">{dataLonga(t.festa.data_inicio)} · {hora(t.festa.data_inicio)}</p>
           </div>
-          <div className="relative mx-6 border-t border-dashed border-ouro/30">
+          <div className="relative mx-6 border-t border-dashed border-linha">
             <span className="absolute -left-9 -top-3 h-6 w-6 rounded-full bg-noir" />
             <span className="absolute -right-9 -top-3 h-6 w-6 rounded-full bg-noir" />
           </div>
@@ -48,7 +48,7 @@ export default async function PaginaIngresso({ params }: { params: Promise<{ cod
             )}
             {t.checkin_em && <p className="mt-3 text-sm text-ouro">Entrada registrada em {dataHora(t.checkin_em)}</p>}
             <p className="mt-5 font-display text-2xl text-marfim">{t.nome_titular}</p>
-            <p className="text-xs uppercase tracking-[0.3em] text-ouro">{SETORES[t.lote.setor] || t.lote.setor} · {t.lote.nome}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-fumaca">{SETORES[t.lote.setor] || t.lote.setor} · {t.lote.nome}</p>
             <div className="mt-5 grid grid-cols-2 gap-3 text-left text-xs">
               <div className="rounded-xl border border-linha p-3"><p className="text-fumaca">Pedido</p><p className="font-mono text-marfim">{t.pedido.codigo}</p></div>
               <div className="rounded-xl border border-linha p-3"><p className="text-fumaca">Local</p><p className="text-marfim">{t.festa.local_nome || "GLAM House"}</p></div>

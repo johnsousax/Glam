@@ -40,13 +40,13 @@ export default async function ListaIngressos({ params }: { params: Promise<{ tok
   const passados = lista.filter((i) => +new Date(i.festa.data_inicio) < agora);
 
   const Item = ({ i }: { i: any }) => (
-    <Link href={`/ingresso/${i.codigo}`} className="cartao flex items-center justify-between gap-4 p-5 transition hover:border-ouro/60">
+    <Link href={`/ingresso/${i.codigo}`} className="cartao flex items-center justify-between gap-4 p-5 transition hover:border-marfim/25">
       <div className="min-w-0">
-        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-ouro">{dataLonga(i.festa.data_inicio)} · {hora(i.festa.data_inicio)}</p>
+        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-fumaca">{dataLonga(i.festa.data_inicio)} · {hora(i.festa.data_inicio)}</p>
         <p className="mt-1 truncate font-display text-2xl">{i.festa.titulo}</p>
         <p className="text-xs text-fumaca">{i.nome_titular} · {SETORES[i.lote.setor] || i.lote.setor} · {i.lote.nome}</p>
       </div>
-      <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-ouro">{i.checkin_em ? "Usado" : "QR →"}</span>
+      <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-fumaca">{i.checkin_em ? "Usado" : "QR →"}</span>
     </Link>
   );
 
@@ -54,7 +54,7 @@ export default async function ListaIngressos({ params }: { params: Promise<{ tok
     <>
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-2xl px-4 py-12">
-        <p className="text-[0.65rem] uppercase tracking-[0.45em] text-ouro">{acesso.email}</p>
+        <p className="text-[0.65rem] uppercase tracking-[0.45em] text-fumaca">{acesso.email}</p>
         <h1 className="mt-2 font-display text-5xl">Meus ingressos</h1>
         <div className="mt-8 space-y-3">
           {proximos.length === 0 && <p className="cartao p-6 text-sm text-fumaca">Nenhum ingresso para as próximas festas.</p>}

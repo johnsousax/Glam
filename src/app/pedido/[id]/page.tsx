@@ -24,7 +24,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="surge mb-8 text-center">
-          <p className="text-[0.65rem] uppercase tracking-[0.45em] text-ouro">Pedido {p.codigo}</p>
+          <p className="text-[0.65rem] uppercase tracking-[0.45em] text-fumaca">Pedido {p.codigo}</p>
           <h1 className="mt-3 font-display text-4xl text-marfim sm:text-5xl">{p.festa.titulo}</h1>
           <p className="mt-2 text-sm text-fumaca">{dataLonga(p.festa.data_inicio)} · {hora(p.festa.data_inicio)}</p>
         </div>
@@ -56,12 +56,12 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
             </div>
             <div className="grid gap-3 text-left">
               {p.ingressos.map((t: any) => (
-                <Link key={t.id} href={`/ingresso/${t.codigo}`} className="cartao flex items-center justify-between p-4 transition hover:border-ouro/60">
+                <Link key={t.id} href={`/ingresso/${t.codigo}`} className="cartao flex items-center justify-between p-4 transition hover:border-marfim/25">
                   <div>
                     <p className="font-display text-xl text-marfim">{t.nome_titular}</p>
                     <p className="text-xs uppercase tracking-[0.2em] text-fumaca">{SETORES[t.lote?.setor] || t.lote?.setor} · {t.lote?.nome}</p>
                   </div>
-                  <span className="text-xs uppercase tracking-[0.25em] text-ouro">Ver QR →</span>
+                  <span className="text-xs uppercase tracking-[0.25em] text-fumaca">Ver QR →</span>
                 </Link>
               ))}
             </div>

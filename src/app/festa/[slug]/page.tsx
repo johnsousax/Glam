@@ -50,7 +50,7 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
 
           <div className="surge space-y-8" style={{ animationDelay: ".1s" }}>
             <div>
-              <p className="text-[0.65rem] uppercase tracking-[0.45em] text-ouro">{dataLonga(festa.data_inicio)} · {hora(festa.data_inicio)}</p>
+              <p className="text-[0.65rem] uppercase tracking-[0.45em] text-fumaca">{dataLonga(festa.data_inicio)} · {hora(festa.data_inicio)}</p>
               <h1 className="mt-3 font-display text-5xl leading-[1.02] text-marfim sm:text-6xl">{festa.titulo}</h1>
               {festa.subtitulo && <p className="mt-3 text-lg text-fumaca">{festa.subtitulo}</p>}
               <div className="mt-6 flex flex-wrap gap-2 text-[0.7rem] uppercase tracking-[0.2em]">
@@ -62,7 +62,7 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
               {percentual != null && (
                 <div className="mt-6 max-w-sm">
                   <div className="h-1.5 overflow-hidden rounded-full bg-linha"><div className="ouro-gradiente brilho-ouro h-full" style={{ width: `${percentual}%` }} /></div>
-                  <p className="mt-2 text-[0.65rem] uppercase tracking-[0.25em] text-ouro">{percentual}% dos ingressos vendidos</p>
+                  <p className="mt-2 text-[0.65rem] uppercase tracking-[0.25em] text-fumaca">{percentual}% dos ingressos vendidos</p>
                 </div>
               )}
               {festa.descricao && <p className="mt-6 whitespace-pre-line text-sm leading-relaxed text-marfim/80">{festa.descricao}</p>}
@@ -73,7 +73,6 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
             ) : (
               <div className="cartao p-8 text-center">
                 <p className="font-display text-2xl italic">Vendas encerradas para esta festa.</p>
-                {casa.whatsapp_casa && <a className="btn-linha mt-5" href={`https://wa.me/${casa.whatsapp_casa}`} target="_blank" rel="noreferrer">Falar com a GLAM</a>}
               </div>
             )}
           </div>

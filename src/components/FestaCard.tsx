@@ -6,7 +6,7 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
   const d = diaMes(festa.data_inicio);
   return (
     <Link href={`/festa/${festa.slug}`} className="surge group block" style={{ animationDelay: `${indice * 0.08}s` }}>
-      <article className="cartao relative overflow-hidden transition duration-500 group-hover:-translate-y-1 group-hover:border-ouro/50 group-hover:shadow-[0_30px_80px_-30px_rgb(212_175_106/.45)]">
+      <article className="cartao relative overflow-hidden transition duration-500 group-hover:-translate-y-1 group-hover:border-marfim/20">
         <div className="relative aspect-[4/5] overflow-hidden">
           {festa.cartaz_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -17,8 +17,8 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-noir via-noir/10 to-transparent" />
-          <div className="absolute left-4 top-4 flex flex-col items-center rounded-2xl border border-ouro/40 bg-noir/70 px-3 py-2 backdrop-blur">
-            <span className="text-[0.6rem] tracking-[0.25em] text-ouro">{d.semana}</span>
+          <div className="absolute left-4 top-4 flex flex-col items-center rounded-2xl border border-linha bg-noir/70 px-3 py-2 backdrop-blur">
+            <span className="text-[0.6rem] tracking-[0.25em] text-fumaca">{d.semana}</span>
             <span className="font-display text-3xl leading-none text-marfim">{d.dia}</span>
             <span className="text-[0.6rem] tracking-[0.25em] text-fumaca">{d.mes}</span>
           </div>
@@ -36,11 +36,11 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
           {percentual != null && (
             <div className="pt-1">
               <div className="h-1 overflow-hidden rounded-full bg-linha"><div className="ouro-gradiente h-full" style={{ width: `${percentual}%` }} /></div>
-              <p className="mt-1 text-[0.65rem] uppercase tracking-[0.2em] text-ouro/80">{percentual}% vendido</p>
+              <p className="mt-1 text-[0.65rem] uppercase tracking-[0.2em] text-fumaca">{percentual}% vendido</p>
             </div>
           )}
           <div className="linha-ouro !mt-4 opacity-40" />
-          <p className="text-center text-[0.7rem] uppercase tracking-[0.35em] text-ouro transition group-hover:tracking-[0.45em]">Comprar ingresso →</p>
+          <p className="text-center text-[0.7rem] uppercase tracking-[0.35em] text-fumaca transition group-hover:tracking-[0.45em]">Comprar ingresso →</p>
         </div>
       </article>
     </Link>
