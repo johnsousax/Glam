@@ -7,7 +7,7 @@ import { localParaIso, slugify } from "@/lib/format";
 import { salvarCliente } from "@/lib/clientes";
 import { confirmarPagamento, payloadNotificacao, traduzirErro } from "@/lib/pedidos";
 import { dispararN8n } from "@/lib/n8n";
-import { falhaInterna } from "@/lib/seguranca";
+import { falhaInterna, senhaVazada } from "@/lib/seguranca";
 import sharp from "sharp";
 
 export type Estado = { ok?: boolean; erro?: string; msg?: string } | undefined;
@@ -295,6 +295,7 @@ export async function salvarMembro(_: Estado, f: FormData): Promise<Estado> {
   if (!["dono", "gerente", "financeiro", "portaria"].includes(papel)) return { erro: "Nível inválido." };
   if (!nome || !email) return { erro: "Informe nome e e-mail." };
   if (senha.length < 12 || senha.length > 128) return { erro: "Senha provisória com 12 a 128 caracteres." };
+  if (await senhaVazada(senha)) return { erro: "Essa senha já apareceu em vazamentos na internet. Escolha outra." };
   const { data: existente } = await db().from("glam_staff").select("id").eq("email", email).maybeSingle();
   if (existente) return { erro: "Essa pessoa já está na equipe. Altere o nível na lista." };
   const { data: criado, error } = await db().auth.admin.createUser({ email, password: senha, email_confirm: true, app_metadata: { sistema: "glam" } });
@@ -338,4 +339,22 @@ export async function salvarConfig(_: Estado, f: FormData): Promise<Estado> {
   await auditar(staff, "config_alterada", "config", "casa");
   revalidatePath("/admin/config");
   return { ok: true, msg: "Configurações salvas." };
+}
+
+// ---------------- WhatsApp da casa (Evolution via n8n) ----------------
+export type SituacaoWhatsapp = { ok: boolean; status: string; numero?: string; perfil?: string; base64?: string; erro?: string };
+
+export async function whatsappAcao(acao: "conectar" | "status" | "desconectar"): Promise<SituacaoWhatsapp> {
+  const staff = await exigirStaff("config");
+  const url = process.env.N8N_WHATSAPP_URL;
+  if (!url) return { ok: false, status: "erro", erro: "Conexão do WhatsApp não configurada no servidor." };
+  if (!["conectar", "status", "desconectar"].includes(acao)) return { ok: false, status: "erro", erro: "Ação inválida." };
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ acao }), signal: AbortSignal.timeout(45000), cache: "no-store" });
+    const j = (await r.json()) as SituacaoWhatsapp;
+    if (acao !== "status") await auditar(staff, `whatsapp_${acao}`, "config", "whatsapp", { status: j.status });
+    return { ok: !!j.ok, status: String(j.status || ""), numero: j.numero, perfil: j.perfil, base64: j.base64, erro: j.erro };
+  } catch (e) {
+    return { ok: false, status: "erro", erro: falhaInterna("whatsapp", e).mensagem };
+  }
 }

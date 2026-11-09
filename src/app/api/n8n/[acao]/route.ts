@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase-admin";
-import { automacaoAutorizada } from "@/lib/n8n";
+import { automacaoAutorizada, dispararN8n } from "@/lib/n8n";
 import { configCasa } from "@/lib/config";
 import { env } from "@/lib/env";
 import { brl, dataLonga, hora, SETORES } from "@/lib/format";
@@ -11,9 +11,13 @@ export const maxDuration = 60;
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 /**
- * Endpoints chamados pelas rotinas do n8n (cabeçalho x-glam-secret obrigatório).
- * Cada um devolve a lista do que precisa ser enviado e marca como enviado (não repete).
+ * Rotinas agendadas no banco (pg_cron + pg_net, cabeçalho x-glam-secret obrigatório).
+ * Cada uma marca o que já foi feito (não repete) e manda os avisos prontos para o n8n.
  */
+export async function POST(req: Request, ctx: { params: Promise<{ acao: string }> }) {
+  return GET(req, ctx);
+}
+
 export async function GET(req: Request, { params }: { params: Promise<{ acao: string }> }) {
   if (!automacaoAutorizada(req)) return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   const { acao } = await params;
@@ -31,13 +35,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       .limit(100);
     const itens = (data || []) as any[];
     if (itens.length) await db().from("glam_pedidos").update({ lembrete_pix_enviado_em: new Date().toISOString() }).in("id", itens.map((p) => p.id));
-    return NextResponse.json({
-      acao, casa: casaInfo,
-      itens: itens.map((p) => ({
+    for (const p of itens) {
+      await dispararN8n("pix_lembrete", {
+        casa: casaInfo,
         codigo: p.codigo, total_fmt: brl(p.total_centavos), festa: p.festa.titulo, cliente: p.cliente,
         minutos_restantes: Math.max(1, Math.round((+new Date(p.expira_em) - agora) / 60e3)), url: `${env.siteUrl}/pedido/${p.id}`,
-      })),
-    });
+      }, p.codigo);
+    }
+    return NextResponse.json({ acao, enviados: itens.length });
   }
 
   // 2) "É hoje": festas de hoje, um aviso por comprador (e-mail + WhatsApp)
@@ -59,7 +64,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       for (const d of porEmail.values()) itens.push({ ...d, festa: { titulo: f.titulo, data: dataLonga(f.data_inicio), hora: hora(f.data_inicio), local: f.local_nome, endereco: f.endereco || casa.endereco, cartaz_url: f.cartaz_url } });
       await db().from("glam_festas").update({ lembrete_hoje_enviado_em: new Date().toISOString() }).eq("id", f.id);
     }
-    return NextResponse.json({ acao, casa: casaInfo, itens });
+    for (const d of itens) await dispararN8n("e_hoje", { casa: casaInfo, ...d }, d.email || d.whatsapp);
+    return NextResponse.json({ acao, enviados: itens.length });
   }
 
   // 3) Relatório no dia seguinte: festas que aconteceram ontem
@@ -82,7 +88,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       });
       await db().from("glam_festas").update({ relatorio_enviado_em: new Date().toISOString(), status: "encerrada" }).eq("id", f.id);
     }
-    return NextResponse.json({ acao, casa: casaInfo, itens });
+    for (const f of itens) await dispararN8n("relatorio", { casa: casaInfo, festa: f }, f.titulo);
+    return NextResponse.json({ acao, enviados: itens.length });
   }
 
   // 4) Cópia de segurança diária (JSON com todas as tabelas glam_; CPF continua criptografado)
@@ -99,12 +106,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       dump[t] = linhas;
     }
     const json = JSON.stringify({ gerado_em: new Date().toISOString(), tabelas: dump });
-    return NextResponse.json({
-      acao, casa: casaInfo,
-      arquivo: `glam-backup-${hojeSP()}.json`,
-      base64: Buffer.from(json).toString("base64"),
-      resumo: Object.fromEntries(Object.entries(dump).map(([k, v]) => [k, v.length])),
-    });
+    const resumo = Object.fromEntries(Object.entries(dump).map(([k, v]) => [k, v.length]));
+    await dispararN8n("backup", { casa: casaInfo, arquivo: `glam-backup-${hojeSP()}.json`, base64: Buffer.from(json).toString("base64"), resumo }, "backup");
+    return NextResponse.json({ acao, resumo });
+  }
+
+  // 5) Configuração para o n8n (WhatsApp do dono e instância) — usada pelo alerta de site fora do ar
+  if (acao === "config") {
+    await dispararN8n("config", { casa: casaInfo }, "config");
+    return NextResponse.json({ acao, ok: true });
   }
 
   return NextResponse.json({ erro: "Ação desconhecida" }, { status: 404 });

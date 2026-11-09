@@ -3,6 +3,9 @@ const site = String(b.site_url || 'https://glam-ingressos.vercel.app');
 const casa = b.casa || {};
 const rem = casa.email_remetente || 'GLAM House <ingressos@glamhouse.com.br>';
 const inst = casa.evolution_instancia || 'glam';
+const mem = $getWorkflowStaticData('global');
+if (casa.whatsapp_dono) mem.whatsapp_dono = String(casa.whatsapp_dono);
+if (casa.evolution_instancia) mem.instancia = String(casa.evolution_instancia);
 const out = [];
 const email = (para, assunto, titulo, corpo) => { if (emailValido(para)) out.push({ json: { canal: 'email', para, assunto, html: moldura(titulo, corpo, site), remetente: rem } }); };
 const zap = (para, texto) => { if (zapValido(para)) out.push({ json: { canal: 'whatsapp', para: String(para).replace(/\D/g, ''), texto, instancia: inst } }); };
@@ -21,6 +24,7 @@ ${ings.map(cartaoIngresso).join('')}
 }
 
 if (b.evento === 'acesso_link') {
+  zap(b.whatsapp, `🔐 *GLAM* — seu link para ver os ingressos (vale 30 min):\n${b.link}\n\nSe não foi você que pediu, ignore.`);
   email(b.email, 'Seu acesso aos ingressos GLAM', 'Meus ingressos',
     `<p>Use o botão abaixo para ver seus ingressos. O link vale por <b>30 minutos</b>.</p><p align="center" style="text-align:center;margin:28px 0">${botao(b.link, 'Ver meus ingressos')}</p><p style="font-size:12px;color:#a39d92">Se não foi você que pediu, ignore este e-mail.</p>`);
 }
@@ -42,5 +46,39 @@ if (b.evento === 'lote_esgotado') {
 if (b.evento === 'alerta_seguranca') {
   zap(casa.whatsapp_dono, b.texto);
   email(casa.email_dono, 'Alerta de segurança — GLAM', 'Alerta de segurança', `<p>${esc(b.texto)}</p><p style="font-size:12px;color:#a39d92">Enviado automaticamente pelo sistema de ingressos.</p>`);
+}
+if (b.evento === 'pix_lembrete') {
+  const c = b.cliente || {};
+  const nome = (c.nome || '').split(' ')[0];
+  zap(c.whatsapp, `Oi, ${nome}! 💛 Seu Pix para *${b.festa}* (${b.total_fmt}) ainda não caiu.\nSua vaga fica reservada por mais ${b.minutos_restantes} min — finalize aqui: ${b.url}`);
+  email(c.email, `Falta pouco: seu ingresso para ${b.festa}`, 'Sua vaga está reservada',
+    `<p>Oi, <b>${esc(nome)}</b>! Vimos que você gerou o Pix de <b>${esc(b.total_fmt)}</b> para <b style="color:${OURO}">${esc(b.festa)}</b>, mas o pagamento ainda não caiu.</p><p>A reserva vale por mais <b>${b.minutos_restantes} minutos</b>.</p><p align="center" style="text-align:center;margin:28px 0">${botao(b.url, 'Finalizar pagamento')}</p>`);
+}
+
+if (b.evento === 'e_hoje') {
+  const f = b.festa || {}, ings = b.ingressos || [];
+  const nome = (b.nome || '').split(' ')[0];
+  email(b.email, `É hoje! ${f.titulo} 🥂`, 'É hoje!',
+    `<p>Oi, <b>${esc(nome)}</b>! Hoje é dia de <b style="color:${OURO}">${esc(f.titulo)}</b>.</p><p>🕘 ${esc(f.hora)}<br>📍 ${esc(f.local || 'GLAM House')}${f.endereco ? '<br>' + esc(f.endereco) : ''}</p><p>Deixe o QR à mão para entrar mais rápido:</p>${ings.map(cartaoIngresso).join('')}`);
+  zap(b.whatsapp, `🥂 *É HOJE!* ${f.titulo}\n🕘 ${f.hora}\n📍 ${f.local || 'GLAM House'}${f.endereco ? '\n' + f.endereco : ''}\n\nSeus ingressos:\n` + ings.map((i) => `🎟️ ${i.nome} — ${i.url}`).join('\n') + `\n\nTe esperamos na casinha mais amada de São Luís ✨`);
+}
+
+if (b.evento === 'relatorio') {
+  const f = b.festa || {};
+  const txt = `📊 *Relatório — ${f.titulo}*\n${f.data}\n\n💰 Faturamento: ${f.faturamento_fmt}\n   Pix ${f.pix_fmt} · Cartão ${f.cartao_fmt} · Balcão ${f.balcao_fmt}\n🎟️ Ingressos: ${f.ingressos} (${f.pedidos} pedidos)\n🚪 Entraram: ${f.entraram} · Faltaram: ${f.faltaram}\n📝 Lista: ${f.lista_entraram}/${f.lista}\n\nCompleto: ${f.relatorio_url}`;
+  zap(casa.whatsapp_dono, txt);
+  email(casa.email_dono, `Relatório: ${f.titulo}`, 'Relatório da festa',
+    `<p><b style="color:${OURO}">${esc(f.titulo)}</b> — ${esc(f.data)}</p><table width="100%" style="font-size:14px;color:#d9d2c5">` +
+    [['Faturamento', f.faturamento_fmt], ['Pix', f.pix_fmt], ['Cartão', f.cartao_fmt], ['Balcão', f.balcao_fmt], ['Ingressos', f.ingressos], ['Entraram', f.entraram], ['Faltaram', f.faltaram], ['Lista', `${f.lista_entraram}/${f.lista}`]]
+      .map(([k, v]) => `<tr><td style="padding:6px 0;border-bottom:1px solid #2a251f">${k}</td><td align="right" style="padding:6px 0;border-bottom:1px solid #2a251f"><b>${esc(v)}</b></td></tr>`).join('') +
+    `</table><p align="center" style="text-align:center;margin-top:24px">${botao(f.relatorio_url, 'Relatório completo')}</p>`);
+}
+
+if (b.evento === 'backup' && emailValido(casa.email_dono) && b.base64) {
+  out.push({
+    json: { canal: 'email', para: casa.email_dono, assunto: `Cópia de segurança GLAM — ${b.arquivo}`, remetente: rem,
+      html: moldura('Cópia de segurança', `<p>Backup diário do sistema de ingressos (fora do servidor). Registros: ${esc(JSON.stringify(b.resumo || {}))}. CPFs seguem criptografados.</p>`, site) },
+    binary: { backup: { data: b.base64, mimeType: 'application/json', fileName: b.arquivo } },
+  });
 }
 return out;

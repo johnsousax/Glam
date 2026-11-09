@@ -89,3 +89,20 @@ export function mascararEmail(e: string | null | undefined) {
   const [u, d] = e.split("@");
   return `${u.slice(0, 2)}${"*".repeat(Math.max(1, u.length - 2))}@${d}`;
 }
+
+/**
+ * Senha vazada? Consulta o Have I Been Pwned por k-anonimato (só os 5 primeiros
+ * caracteres do SHA-1 saem do servidor). Se o serviço não responder, não bloqueia.
+ */
+export async function senhaVazada(senha: string) {
+  try {
+    const { createHash } = await import("crypto");
+    const sha = createHash("sha1").update(senha).digest("hex").toUpperCase();
+    const r = await fetch(`https://api.pwnedpasswords.com/range/${sha.slice(0, 5)}`, { headers: { "Add-Padding": "true" }, signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return false;
+    const resto = sha.slice(5);
+    return (await r.text()).split("\n").some((l) => l.split(":")[0].trim() === resto && Number(l.split(":")[1]) > 0);
+  } catch {
+    return false;
+  }
+}

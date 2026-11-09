@@ -9,7 +9,12 @@ export type EventoGlam =
   | "ingresso_transferido"
   | "lote_esgotado"
   | "pedido_cancelado"
-  | "alerta_seguranca";
+  | "alerta_seguranca"
+  | "pix_lembrete"
+  | "e_hoje"
+  | "relatorio"
+  | "backup"
+  | "config";
 
 /** Envia um evento para o fluxo "GLAM | Eventos do site" no n8n. Nunca derruba a requisição. */
 export async function dispararN8n(evento: EventoGlam, dados: Record<string, unknown>, referencia?: string) {

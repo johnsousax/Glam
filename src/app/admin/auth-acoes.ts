@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { authClient } from "@/lib/supabase-server";
 import { db } from "@/lib/supabase-admin";
-import { dentroDoLimite, ipAtual, logSeguranca, turnstileOk } from "@/lib/seguranca";
+import { dentroDoLimite, ipAtual, logSeguranca, senhaVazada, turnstileOk } from "@/lib/seguranca";
 import { dispararN8n } from "@/lib/n8n";
 import { configCasa } from "@/lib/config";
 
@@ -97,6 +97,7 @@ export async function trocarSenha(_: Estado, f: FormData): Promise<Estado> {
   const nova = String(f.get("nova") || "");
   if (nova.length < 12 || nova.length > 128) return { erro: "A nova senha precisa ter de 12 a 128 caracteres." };
   if (nova !== String(f.get("repetir") || "")) return { erro: "As senhas não conferem." };
+  if (await senhaVazada(nova)) return { erro: "Essa senha já apareceu em vazamentos na internet. Escolha outra." };
   const sb = await authClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user?.email) return { erro: "Sessão expirada." };

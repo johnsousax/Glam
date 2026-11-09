@@ -28,25 +28,19 @@ Padrão completo em `SECURITY.md` e relatório da auditoria em `docs/RELATORIO-S
 - Registro de ações: cancelamentos, cortesias, mudanças de preço etc.
 - Backup diário por e-mail (rotina do n8n).
 
-## Para colocar 100% no ar
+## Situação da instalação
 
-1. **Supabase → Vercel:** copie a chave `service_role` (Supabase › Project Settings › API Keys)
-   e crie a variável `SUPABASE_SERVICE_ROLE_KEY` no projeto `glam-ingressos` da Vercel. Redeploy.
-2. **Primeiro acesso:** abra `/admin/setup` e crie a conta do dono usando o código de instalação
-   (variável `GLAM_SETUP_TOKEN` na Vercel). Ative a verificação em 2 etapas logo no primeiro login (obrigatória). Depois, em `/admin/config`,
-   preencha WhatsApp do dono, e-mail do dono, remetente e a instância do Evolution.
-3. **PagBank:** gere o token (PagBank › Integrações) e crie `PAGBANK_TOKEN` na Vercel.
-   Comece com `PAGBANK_ENV=sandbox`; para vender de verdade troque para `production`.
-   Sem token o site funciona em **modo demonstração** (botão "Simular pagamento").
-4. **n8n** (os dois fluxos já estão criados, desativados):
-   - Credencial **Header Auth** "GLAM Segredo (x-glam-secret)": nome `x-glam-secret`,
-     valor = `GLAM_AUTOMACAO_SECRET` da Vercel. Use nos nós Webhook e HTTP.
-   - Credencial **SMTP** "Resend SMTP (GLAM)": host `smtp.resend.com`, porta 465, SSL,
-     usuário `resend`, senha = API key do Resend (domínio do remetente verificado no Resend).
-   - Nos nós **Enviar WhatsApp**, escolha a credencial da Evolution onde está a instância da GLAM.
-   - Confira o fuso do n8n (Settings › Timezone = America/Sao_Paulo) e publique os dois fluxos.
-5. **Domínio:** adicione o domínio da GLAM no projeto da Vercel e atualize `NEXT_PUBLIC_SITE_URL`
-   (e as URLs dos nós HTTP do fluxo de rotinas).
+Já feito automaticamente:
+- Banco (tabelas `glam_*`, segurança, auditoria, rotinas agendadas no pg_cron com segredo no Vault).
+- Conta do dono vinculada ao login existente de lucasbenicio3110@gmail.com (mesma senha); 2 etapas pedida no 1º acesso.
+- n8n: **GLAM | Eventos do site** (WhatsApp + alerta de site fora do ar) e **GLAM | Conexão do WhatsApp**, ativos, com endereços secretos.
+- Vercel: todas as variáveis, exceto as duas abaixo.
+
+Falta:
+1. `SUPABASE_SERVICE_ROLE_KEY` na Vercel (chave secreta do Supabase).
+2. `PAGBANK_TOKEN` na Vercel (sem ele o site fica em modo demonstração).
+3. No painel › Configurações › WhatsApp da casa: “Conectar WhatsApp” e ler o QR com o celular da GLAM.
+4. Opcional: e-mails — criar conta no Resend, credencial SMTP no n8n e reativar o nó “Enviar E-mail”.
 
 ## Variáveis de ambiente
 Veja `.env.example`.

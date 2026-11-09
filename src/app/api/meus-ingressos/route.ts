@@ -28,9 +28,11 @@ export async function POST(req: Request) {
   const token = tokenAleatorio(32);
   await db().from("glam_acessos").insert({ token_hash: sha256(token), email, expira_em: new Date(Date.now() + 30 * 60e3).toISOString() });
   const casa = await configCasa();
+  const { data: cli } = await db().from("glam_clientes").select("whatsapp").eq("email", email).maybeSingle();
   await dispararN8n("acesso_link", {
-    casa: { nome: casa.nome, email_remetente: casa.email_remetente },
+    casa: { nome: casa.nome, email_remetente: casa.email_remetente, evolution_instancia: casa.evolution_instancia },
     email,
+    whatsapp: cli?.whatsapp || null,
     link: `${env.siteUrl}/meus-ingressos/${token}`,
   }, email);
   return NextResponse.json({ ok: true });
