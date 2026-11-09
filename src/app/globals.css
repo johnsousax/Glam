@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --color-noir: #0a0908;
+  --color-carvao: #12100e;
+  --color-grafite: #1b1815;
+  --color-linha: #2a251f;
+  --color-ouro: #d4af6a;
+  --color-ouro-claro: #f3dca6;
+  --color-ouro-escuro: #9c7a3c;
+  --color-marfim: #f5efe4;
+  --color-fumaca: #a39d92;
+  --color-sucesso: #7fc8a0;
+  --color-perigo: #e5867a;
+  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+}
+
+:root { color-scheme: dark; }
+
+html, body { background: var(--color-noir); color: var(--color-marfim); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+
+::selection { background: var(--color-ouro); color: var(--color-noir); }
+
+/* Gradiente dourado reutilizável */
+.ouro-gradiente {
+  background: linear-gradient(115deg, #8a6a32 0%, #d4af6a 22%, #f7e3b0 42%, #c9a05a 60%, #f3dca6 78%, #9c7a3c 100%);
+  background-size: 220% 100%;
+}
+.texto-ouro {
+  background: linear-gradient(115deg, #a8853f 0%, #e6c27f 30%, #fbecc4 50%, #d4af6a 70%, #9c7a3c 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brilho-ouro { animation: brilho 6s linear infinite; }
+@keyframes brilho { from { background-position: 200% 0; } to { background-position: -20% 0; } }
+
+/* Logo GLAM tingido de dourado via máscara */
+.logo-glam {
+  -webkit-mask: url(/logo-branco.png) center / contain no-repeat;
+  mask: url(/logo-branco.png) center / contain no-repeat;
+  aspect-ratio: 720 / 202;
+}
+
+.borda-ouro { border: 1px solid rgb(212 175 106 / 0.28); }
+.linha-ouro { height: 1px; background: linear-gradient(90deg, transparent, rgb(212 175 106 / .7), transparent); }
+
+.grao::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.campo {
+  width: 100%; border-radius: .75rem; background: var(--color-carvao); border: 1px solid var(--color-linha);
+  padding: .8rem 1rem; color: var(--color-marfim); outline: none; transition: border-color .2s, box-shadow .2s;
+}
+.campo:focus { border-color: var(--color-ouro); box-shadow: 0 0 0 3px rgb(212 175 106 / .15); }
+.campo::placeholder { color: #6f685e; }
+select.campo { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--color-ouro) 50%), linear-gradient(135deg, var(--color-ouro) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 2.25rem; }
+.rotulo { display: block; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; color: var(--color-fumaca); margin-bottom: .4rem; }
+
+.btn-ouro {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  border-radius: 999px; padding: .9rem 1.6rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .78rem;
+  color: #1a1408; transition: transform .2s, box-shadow .3s, filter .2s; box-shadow: 0 8px 30px -10px rgb(212 175 106 / .6);
+}
+.btn-ouro:hover { transform: translateY(-1px); box-shadow: 0 12px 40px -10px rgb(212 175 106 / .8); filter: brightness(1.05); }
+.btn-ouro:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-linha {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; padding: .8rem 1.4rem;
+  font-weight: 500; letter-spacing: .08em; text-transform: uppercase; font-size: .75rem; color: var(--color-ouro-claro);
+  border: 1px solid rgb(212 175 106 / .4); transition: background .2s, border-color .2s;
+}
+.btn-linha:hover { background: rgb(212 175 106 / .08); border-color: var(--color-ouro); }
+
+.cartao { background: linear-gradient(180deg, rgb(27 24 21 / .9), rgb(18 16 14 / .9)); border: 1px solid var(--color-linha); border-radius: 1.25rem; }
+
+/* ---------- Animação de entrada ---------- */
+.intro-raio { animation: raio 2.4s cubic-bezier(.7,0,.2,1) forwards; }
+@keyframes raio { 0% { transform: scaleX(0); opacity: 0 } 30% { opacity: 1 } 100% { transform: scaleX(1); opacity: 1 } }
+.intro-logo { animation: logoEntra 1.6s cubic-bezier(.2,.8,.2,1) .35s both; }
+@keyframes logoEntra { from { opacity: 0; filter: blur(14px); transform: scale(1.12); letter-spacing: .5em } to { opacity: 1; filter: blur(0); transform: scale(1) } }
+.intro-frase span { display: inline-block; opacity: 0; transform: translateY(14px); animation: palavra .8s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes palavra { to { opacity: 1; transform: none } }
+.intro-sai { animation: introSai 1s cubic-bezier(.7,0,.3,1) forwards; }
+@keyframes introSai { to { opacity: 0; transform: scale(1.04); filter: blur(6px); visibility: hidden } }
+.particula { position: absolute; width: 2px; height: 2px; border-radius: 99px; background: var(--color-ouro-claro); box-shadow: 0 0 8px 2px rgb(243 220 166 / .6); animation: sobe linear infinite; opacity: 0; }
+@keyframes sobe { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translateY(-80vh); opacity: 0 } }
+
+.surge { animation: surge .9s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes surge { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+
+.scanner-mira { box-shadow: 0 0 0 9999px rgb(0 0 0 / .55); }
+
+@media print {
+  html, body { background: #fff !important; color: #111 !important; }
+  .nao-imprimir { display: none !important; }
+  .cartao { background: #fff !important; border-color: #ddd !important; }
+  .texto-ouro { color: #8a6a32 !important; -webkit-text-fill-color: #8a6a32; }
+}

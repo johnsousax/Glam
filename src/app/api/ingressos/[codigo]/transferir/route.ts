@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { db } from "@/lib/supabase-admin";
+import { dispararN8n } from "@/lib/n8n";
+import { configCasa } from "@/lib/config";
+import { env } from "@/lib/env";
+import { dataLonga, hora, normalizarWhatsapp } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(req: Request, { params }: { params: Promise<{ codigo: string }> }) {
+  const { codigo } = await params;
+  const b = await req.json().catch(() => ({}));
+  const nome = String(b.nome || "").trim().slice(0, 80);
+  const email = String(b.email || "").trim().toLowerCase();
+  const emailAtual = String(b.email_atual || "").trim().toLowerCase();
+  if (nome.length < 3 || !/^\S+@\S+\.\S+$/.test(email)) return NextResponse.json({ erro: "Preencha nome e e-mail de quem vai usar." }, { status: 400 });
+
+  const { data: t } = await db()
+    .from("glam_ingressos")
+    .select("*, pedido:glam_pedidos(status, cliente:glam_clientes(email)), festa:glam_festas(titulo,data_inicio,local_nome,endereco), lote:glam_lotes(nome,setor)")
+    .eq("codigo", codigo).maybeSingle();
+  if (!t || t.status !== "ativo" || t.pedido?.status !== "pago") return NextResponse.json({ erro: "Ingresso inválido." }, { status: 404 });
+  if (t.checkin_em) return NextResponse.json({ erro: "Este ingresso já foi usado." }, { status: 409 });
+  const donos = [t.email_titular, t.pedido?.cliente?.email].filter(Boolean).map((e: string) => e.toLowerCase());
+  if (!donos.includes(emailAtual)) return NextResponse.json({ erro: "O e-mail não confere com o da compra." }, { status: 403 });
+  if (t.transferencias >= 3) return NextResponse.json({ erro: "Limite de transferências atingido. Fale com a GLAM." }, { status: 409 });
+
+  // Novo código: o QR antigo deixa de valer imediatamente
+  const { data: novo } = await db().rpc("glam_gerar_codigo", { p_bytes: 18 });
+  const { error } = await db().from("glam_ingressos").update({
+    codigo: novo, nome_titular: nome, email_titular: email,
+    whatsapp_titular: b.whatsapp ? normalizarWhatsapp(String(b.whatsapp)) : null,
+    transferencias: t.transferencias + 1,
+  }).eq("id", t.id).is("checkin_em", null);
+  if (error) return NextResponse.json({ erro: "Não foi possível transferir." }, { status: 500 });
+
+  await db().from("glam_auditoria").insert({ staff_nome: "cliente", acao: "ingresso_transferido", entidade: "ingresso", entidade_id: t.id, detalhes: { de: t.nome_titular, para: nome } });
+  const casa = await configCasa();
+  await dispararN8n("ingresso_transferido", {
+    casa: { nome: casa.nome, whatsapp: casa.whatsapp_casa, email_remetente: casa.email_remetente, evolution_instancia: casa.evolution_instancia },
+    de: t.nome_titular,
+    para: { nome, email, whatsapp: b.whatsapp ? normalizarWhatsapp(String(b.whatsapp)) : null },
+    festa: { titulo: t.festa.titulo, data: dataLonga(t.festa.data_inicio), hora: hora(t.festa.data_inicio), local: t.festa.local_nome, endereco: t.festa.endereco },
+    ingresso: { codigo: novo, setor: t.lote.setor, lote: t.lote.nome, url: `${env.siteUrl}/ingresso/${novo}`, qr_url: `${env.siteUrl}/api/qr/${novo}` },
+  }, t.id);
+  return NextResponse.json({ ok: true });
+}
