@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
     const itens = (data || []) as any[];
     if (itens.length) await db().from("glam_pedidos").update({ lembrete_pix_enviado_em: new Date().toISOString() }).in("id", itens.map((p) => p.id));
     return NextResponse.json({
-      casa: casaInfo,
+      acao, casa: casaInfo,
       itens: itens.map((p) => ({
         codigo: p.codigo, total_fmt: brl(p.total_centavos), festa: p.festa.titulo, cliente: p.cliente,
         minutos_restantes: Math.max(1, Math.round((+new Date(p.expira_em) - agora) / 60e3)), url: `${env.siteUrl}/pedido/${p.id}`,
@@ -59,7 +59,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       for (const d of porEmail.values()) itens.push({ ...d, festa: { titulo: f.titulo, data: dataLonga(f.data_inicio), hora: hora(f.data_inicio), local: f.local_nome, endereco: f.endereco || casa.endereco, cartaz_url: f.cartaz_url } });
       await db().from("glam_festas").update({ lembrete_hoje_enviado_em: new Date().toISOString() }).eq("id", f.id);
     }
-    return NextResponse.json({ casa: casaInfo, itens });
+    return NextResponse.json({ acao, casa: casaInfo, itens });
   }
 
   // 3) Relatório no dia seguinte: festas que aconteceram ontem
@@ -82,7 +82,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
       });
       await db().from("glam_festas").update({ relatorio_enviado_em: new Date().toISOString(), status: "encerrada" }).eq("id", f.id);
     }
-    return NextResponse.json({ casa: casaInfo, itens });
+    return NextResponse.json({ acao, casa: casaInfo, itens });
   }
 
   // 4) Cópia de segurança diária (JSON com todas as tabelas glam_; CPF continua criptografado)
@@ -100,7 +100,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
     }
     const json = JSON.stringify({ gerado_em: new Date().toISOString(), tabelas: dump });
     return NextResponse.json({
-      casa: casaInfo,
+      acao, casa: casaInfo,
       arquivo: `glam-backup-${hojeSP()}.json`,
       base64: Buffer.from(json).toString("base64"),
       resumo: Object.fromEntries(Object.entries(dump).map(([k, v]) => [k, v.length])),
