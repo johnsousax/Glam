@@ -10,15 +10,17 @@ export function WhatsappConexao() {
   const rodar = useCallback(async (acao: "conectar" | "status" | "desconectar") => {
     setCarregando(true);
     const r = await whatsappAcao(acao);
-    setS((antes) => (acao === "status" && antes?.base64 && r.status !== "conectado" ? { ...r, base64: antes.base64 } : r));
+    setS((antes) => (acao === "status" && antes?.base64 && !r.base64 && r.status !== "conectado" ? { ...r, status: "aguardando_qr", base64: antes.base64 } : r));
     setCarregando(false);
   }, []);
   useEffect(() => { rodar("status"); }, [rodar]);
-  // Enquanto o QR estiver na tela, confere a cada 5 s se já conectou
+  // Enquanto o QR estiver na tela: confere a cada 5 s se já conectou e
+  // pede um QR novo a cada 25 s (o WhatsApp invalida o código em ~40 s).
   useEffect(() => {
     if (s?.status !== "aguardando_qr") return;
-    const t = setInterval(() => rodar("status"), 5000);
-    return () => clearInterval(t);
+    const status = setInterval(() => rodar("status"), 5000);
+    const novo = setInterval(() => rodar("conectar"), 25000);
+    return () => { clearInterval(status); clearInterval(novo); };
   }, [s?.status, rodar]);
 
   const conectado = s?.status === "conectado";
@@ -37,8 +39,8 @@ export function WhatsappConexao() {
       {s?.base64 && !conectado && (
         <div className="mt-4 flex flex-col items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={s.base64.startsWith("data:") ? s.base64 : `data:image/png;base64,${s.base64}`} alt="QR Code do WhatsApp" className="h-60 w-60 rounded-xl bg-white p-2" />
-          <p className="text-center text-xs text-fumaca">No celular da GLAM: WhatsApp › Aparelhos conectados › Conectar aparelho › aponte para o QR.</p>
+          <img src={s.base64.startsWith("data:") ? s.base64 : `data:image/png;base64,${s.base64}`} alt="QR Code do WhatsApp" className="h-72 w-72 max-w-full rounded-xl bg-white p-3" />
+          <p className="text-center text-sm text-fumaca">No celular da GLAM: WhatsApp › ⋮ › Aparelhos conectados › Conectar aparelho › aponte para o QR.<br /><span className="text-xs">O código se renova sozinho a cada 25 segundos. Deixe a tela clara e o celular a um palmo de distância.</span></p>
         </div>
       )}
       {s?.erro && <p className="mt-3 text-sm text-perigo">{s.erro}</p>}

@@ -19,7 +19,7 @@ function moldura(titulo, corpo, site) {
 <tr><td align="center" style="padding:32px 28px 8px"><img src="${site}/logo-dourado.png" width="140" alt="GLAM" style="display:block"></td></tr>
 <tr><td align="center" style="padding:8px 28px 0;font-family:Georgia,serif;font-size:28px;color:#f5efe4">${titulo}</td></tr>
 <tr><td style="padding:20px 28px 32px;font-size:15px;line-height:1.6;color:#d9d2c5">${corpo}</td></tr>
-<tr><td align="center" style="padding:18px;border-top:1px solid #2a251f;font-size:11px;letter-spacing:2px;color:#a39d92">GLAM HOUSE · A CASINHA MAIS AMADA DE SÃO LUÍS</td></tr>
+<tr><td align="center" style="padding:18px 8px;border-top:1px solid #2a251f;font-size:9px;letter-spacing:1px;white-space:nowrap;color:#a39d92">GLAM HOUSE · A CASINHA MAIS AMADA DE SÃO LUÍS</td></tr>
 </table></td></tr></table></body></html>`;
 }
 function cartaoIngresso(i) {
