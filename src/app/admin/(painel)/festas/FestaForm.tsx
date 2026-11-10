@@ -18,9 +18,11 @@ export function FestaForm({ festa }: { festa?: Festa }) {
       <div><label className="rotulo">Classificação</label><input name="classificacao" className="campo" defaultValue={festa?.classificacao || "18+"} /></div>
       <div>
         <label className="rotulo">Situação</label>
-        <select name="status" className="campo" defaultValue={festa?.status || "rascunho"}>
-          <option value="rascunho">Rascunho (não aparece no site)</option>
-          <option value="publicada">Publicada (à venda)</option>
+        <select name="status" className="campo" defaultValue={festa?.status || "publicada"}>
+          <option value="publicada">Ativo — aparece no site e vende</option>
+          <option value="inativa">Inativo — aparece no site, vendas fechadas</option>
+          <option value="esgotada">Esgotado — aparece no site como esgotado</option>
+          <option value="rascunho">Oculto — não aparece no site</option>
           <option value="encerrada">Encerrada</option>
           <option value="cancelada">Cancelada</option>
         </select>

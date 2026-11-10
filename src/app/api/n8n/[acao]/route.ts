@@ -48,7 +48,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ acao: st
   // 2) "É hoje": festas de hoje, um aviso por comprador (e-mail + WhatsApp)
   if (acao === "festas-hoje") {
     const ini = new Date(`${hojeSP()}T00:00:00-03:00`), fim = new Date(ini.getTime() + 864e5);
-    const { data: festas } = await db().from("glam_festas").select("*").eq("status", "publicada").is("lembrete_hoje_enviado_em", null)
+    const { data: festas } = await db().from("glam_festas").select("*").in("status", ["publicada", "inativa", "esgotada"]).is("lembrete_hoje_enviado_em", null)
       .gte("data_inicio", ini.toISOString()).lt("data_inicio", fim.toISOString());
     const itens: any[] = [];
     for (const f of (festas || []) as any[]) {

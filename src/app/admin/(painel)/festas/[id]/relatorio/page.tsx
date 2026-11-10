@@ -82,7 +82,6 @@ export default async function Relatorio({ params }: { params: Promise<{ id: stri
             </table>
           </section>
         )}
-        <p className="text-[0.65rem] text-fumaca">Valores brutos, antes das taxas do PagBank (Pix 1,89%; cartão 4,99% + R$ 0,40 ou 3,99% + R$ 0,40).</p>
       </div>
     </div>
   );

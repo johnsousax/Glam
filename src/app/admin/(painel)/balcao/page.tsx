@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Balcao() {
   const staff = await exigirStaff("balcao");
-  const { data: festas } = await db().from("glam_festas").select("id,titulo, lotes:glam_lotes(id,nome,setor,preco_centavos,ativo)").in("status", ["publicada", "rascunho"]).gte("data_inicio", new Date(Date.now() - 12 * 3600e3).toISOString()).order("data_inicio");
+  const { data: festas } = await db().from("glam_festas").select("id,titulo, lotes:glam_lotes(id,nome,setor,preco_centavos,ativo)").in("status", ["publicada", "inativa", "esgotada", "rascunho"]).gte("data_inicio", new Date(Date.now() - 12 * 3600e3).toISOString()).order("data_inicio");
   const opcoes = (festas || []).flatMap((f: any) => f.lotes.filter((l: any) => l.ativo).map((l: any) => ({ festa: f.id, lote: l.id, rotulo: `${f.titulo} — ${SETORES[l.setor] || l.setor} · ${l.nome} (${brl(l.preco_centavos)})` })));
   return (
     <>

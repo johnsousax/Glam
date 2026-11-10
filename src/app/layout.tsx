@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import { Consentimento } from "@/components/Consentimento";
-import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], variable: "--font-cormorant" });
-const montserrat = Montserrat({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-montserrat" });
 
 export const metadata: Metadata = {
   title: { default: "GLAM House · Ingressos", template: "%s · GLAM House" },
@@ -23,7 +20,7 @@ const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || "880769331739336";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await connection(); // renderização dinâmica: cada página recebe o nonce da CSP
   return (
-    <html lang="pt-BR" className={`${cormorant.variable} ${montserrat.variable}`}>
+    <html lang="pt-BR">
       <body className="grao">
         {children}
         <Consentimento pixelId={PIXEL} />

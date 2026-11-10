@@ -22,6 +22,9 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
             <span className="font-display text-3xl leading-none text-marfim">{d.dia}</span>
             <span className="text-[0.6rem] tracking-[0.25em] text-fumaca">{d.mes}</span>
           </div>
+          {festa.status === "inativa" && (
+            <span className="absolute right-4 top-4 rounded-full bg-noir/80 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-marfim">Em breve</span>
+          )}
           {esgotada && (
             <span className="absolute right-4 top-4 rounded-full bg-perigo/90 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-noir">Esgotado</span>
           )}
@@ -31,7 +34,7 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
           {festa.subtitulo && <p className="text-sm text-fumaca">{festa.subtitulo}</p>}
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs uppercase tracking-[0.2em] text-fumaca">{hora(festa.data_inicio)} · {festa.local_nome || "GLAM"}</span>
-            {aPartir != null && <span className="text-sm"><span className="text-fumaca">a partir de </span><span className="texto-ouro font-semibold">{brl(aPartir)}</span></span>}
+            {aPartir != null && festa.status === "publicada" && <span className="text-sm"><span className="text-fumaca">a partir de </span><span className="texto-ouro font-semibold">{brl(aPartir)}</span></span>}
           </div>
           {percentual != null && (
             <div className="pt-1">
@@ -40,7 +43,7 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
             </div>
           )}
           <div className="linha-ouro !mt-4 opacity-40" />
-          <p className="text-center text-[0.7rem] uppercase tracking-[0.35em] text-ouro transition group-hover:tracking-[0.45em]">Comprar ingresso →</p>
+          <p className="text-center text-[0.7rem] uppercase tracking-[0.35em] text-ouro transition group-hover:tracking-[0.45em]">{festa.status === "inativa" ? "Ver detalhes →" : esgotada ? "Esgotado" : "Comprar ingresso →"}</p>
         </div>
       </article>
     </Link>

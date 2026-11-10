@@ -12,8 +12,8 @@
   --color-fumaca: #a39d92;
   --color-sucesso: #7fc8a0;
   --color-perigo: #e5867a;
-  --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  --font-sans: var(--font-montserrat), "Montserrat", system-ui, sans-serif;
+  --font-display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root { color-scheme: dark; }
@@ -129,3 +129,6 @@ body:has(.painel)::after { display: none; }
 }
 .painel .btn-ouro.ouro-gradiente { background: var(--color-ouro); }
 .painel .logo-glam.logo-ouro { background: var(--color-marfim); }
+
+/* Fontes padrão do aparelho em todo o site: títulos em negrito, sem itálico de enfeite. */
+.font-display { font-weight: 700; letter-spacing: -0.015em; font-style: normal; }

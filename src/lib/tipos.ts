@@ -12,7 +12,7 @@ export type Festa = {
   lotacao: number;
   mostrar_percentual: boolean;
   classificacao: string | null;
-  status: "rascunho" | "publicada" | "encerrada" | "cancelada";
+  status: "rascunho" | "publicada" | "inativa" | "esgotada" | "encerrada" | "cancelada";
 };
 
 export type Lote = {

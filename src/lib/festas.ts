@@ -2,22 +2,22 @@ import "server-only";
 import { db } from "./supabase-admin";
 import type { Festa, Lote, LoteVitrine, SetorVitrine } from "./tipos";
 
+/** Situações que aparecem no site: Ativo (à venda), Inativo (vendas fechadas) e Esgotado. Oculto = rascunho. */
+export const NO_SITE = ["publicada", "inativa", "esgotada"] as const;
+
 export async function festasPublicadas(): Promise<(Festa & { a_partir: number | null; esgotada: boolean; percentual: number | null })[]> {
   const desde = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
   const { data: festas } = await db()
     .from("glam_festas")
     .select("*")
-    .eq("status", "publicada")
+    .in("status", NO_SITE)
     .gte("data_inicio", desde)
     .order("data_inicio");
-  const out = [];
-  for (const f of (festas || []) as Festa[]) {
-    const setores = await setoresDaFesta(f.id);
+  return Promise.all(((festas || []) as Festa[]).map(async (f) => {
+    const [setores, percentual] = await Promise.all([setoresDaFesta(f.id), f.mostrar_percentual ? percentualVendido(f) : null]);
     const precos = setores.map((s) => s.atual?.preco_centavos).filter((p): p is number => p != null);
-    const percentual = f.mostrar_percentual ? await percentualVendido(f) : null;
-    out.push({ ...f, a_partir: precos.length ? Math.min(...precos) : null, esgotada: precos.length === 0, percentual });
-  }
-  return out;
+    return { ...f, a_partir: precos.length ? Math.min(...precos) : null, esgotada: f.status === "esgotada" || (f.status === "publicada" && precos.length === 0), percentual };
+  }));
 }
 
 export async function festaPorSlug(slug: string): Promise<Festa | null> {

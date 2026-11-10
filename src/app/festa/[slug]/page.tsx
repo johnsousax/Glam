@@ -72,7 +72,7 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
               <Checkout festaId={festa.id} festaTitulo={festa.titulo} setores={setores} />
             ) : (
               <div className="cartao p-8 text-center">
-                <p className="font-display text-2xl italic">Vendas encerradas para esta festa.</p>
+                <p className="font-display text-2xl italic">{festa.status === "esgotada" ? "Ingressos esgotados." : festa.status === "inativa" ? "Vendas em breve." : festa.status === "cancelada" ? "Esta festa foi cancelada." : "Vendas encerradas para esta festa."}</p>
               </div>
             )}
           </div>

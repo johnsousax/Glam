@@ -49,6 +49,8 @@ export async function salvarFesta(_: Estado, f: FormData): Promise<Estado> {
     if (!titulo) return { erro: "Informe o título." };
     const inicio = localParaIso(txt(f, "data_inicio"));
     if (!inicio) return { erro: "Informe a data e hora." };
+    const situacao = txt(f, "status");
+    if (situacao && !SITUACOES.includes(situacao)) return { erro: "Situação inválida." };
     const dados: Record<string, unknown> = {
       titulo,
       subtitulo: txt(f, "subtitulo") || null,
@@ -82,6 +84,20 @@ export async function salvarFesta(_: Estado, f: FormData): Promise<Estado> {
     if ((e as any)?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
     return { erro: e instanceof Error && e.message.startsWith("Cartaz") ? e.message : falhaInterna("festa", e).mensagem };
   }
+}
+
+const SITUACOES = ["publicada", "inativa", "esgotada", "rascunho", "encerrada", "cancelada"];
+
+/** Troca rápida da situação da festa (lista de festas). */
+export async function mudarSituacaoFesta(f: FormData) {
+  const staff = await exigirStaff("festas");
+  const id = txt(f, "id"), status = txt(f, "status");
+  if (!id || !SITUACOES.includes(status)) return;
+  const { error } = await db().from("glam_festas").update({ status, atualizado_em: new Date().toISOString() }).eq("id", id);
+  if (error) { falhaInterna("painel", error); return; }
+  await auditar(staff, "festa_situacao", "festa", id, { status });
+  revalidatePath("/admin/festas");
+  revalidatePath("/");
 }
 
 export async function salvarLote(_: Estado, f: FormData): Promise<Estado> {

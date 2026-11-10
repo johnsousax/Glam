@@ -9,7 +9,7 @@ export default async function Portaria({ searchParams }: { searchParams: Promise
   const staff = await exigirStaff("portaria");
   const { festa } = await searchParams;
   const { data: festas } = await db().from("glam_festas").select("id,titulo,data_inicio")
-    .in("status", ["publicada", "encerrada"])
+    .in("status", ["publicada", "inativa", "esgotada", "encerrada"])
     .gte("data_inicio", new Date(Date.now() - 36 * 3600e3).toISOString())
     .lte("data_inicio", new Date(Date.now() + 14 * 864e5).toISOString())
     .order("data_inicio");
