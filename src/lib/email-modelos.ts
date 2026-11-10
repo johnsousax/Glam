@@ -39,11 +39,9 @@ export function montarEmails(b: any, siteUrl: string): EmailMontado[] {
 
 if (b.evento === 'pedido_pago') {
   const f = b.festa || {}, c = b.cliente || {}, ings = b.ingressos || [];
+  // Só o básico: os ingressos vão em PDF anexado (um por pessoa).
   const corpo = `<p>Oi, <b>${esc((c.nome || '').split(' ')[0])}</b>! Seu pagamento foi aprovado e seus ingressos estão garantidos ✨</p>
-<p style="margin:0"><b style="color:${OURO}">${esc(f.titulo)}</b><br>${esc(f.data)} · ${esc(f.hora)}<br>${esc(f.local || '')}${f.endereco ? ' — ' + esc(f.endereco) : ''}</p>
-${ings.map(cartaoIngresso).join('')}
-<p style="font-size:13px;color:#a39d92">Pedido <b>${esc(b.pedido.codigo)}</b> · ${esc(b.pedido.total_fmt)}. Cada QR entra uma vez só — não compartilhe print. Você pode transferir um ingresso pela página dele.</p>
-<p align="center" style="text-align:center;margin-top:24px">${botao(b.meus_ingressos_url || site + '/meus-ingressos', 'Meus ingressos')}</p>`;
+<p style="margin:0"><b style="color:${OURO}">${esc(f.titulo)}</b><br>${esc(f.data)} · ${esc(f.hora)}<br>${esc(f.local || '')}${f.endereco ? ' — ' + esc(f.endereco) : ''}</p>`;
   email(c.email, (b.reenvio ? '[Reenvio] ' : '') + `Seus ingressos para ${f.titulo} ✨`, 'Ingressos confirmados', corpo);
   zap(c.whatsapp, `✨ *GLAM* — pagamento aprovado!\n\nOi, ${(c.nome || '').split(' ')[0]}! Seus ingressos para *${f.titulo}* estão garantidos.\n📅 ${f.data} · ${f.hora}\n📍 ${f.local || 'GLAM House'}\n\n` +
     ings.map((i, n) => `🎟️ ${n + 1}. ${i.nome} — ${i.setor}\n${i.url}`).join('\n\n') +
