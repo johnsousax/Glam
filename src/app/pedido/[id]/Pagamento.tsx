@@ -15,7 +15,7 @@ function useRelogio(expiraEm: string) {
   return { resta, texto: `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` };
 }
 
-export function Pagamento({ pedidoId, expiraEm, demo, nomeCliente }: { pedidoId: string; expiraEm: string; demo: boolean; nomeCliente: string }) {
+export function Pagamento({ pedidoId, expiraEm, demo, cartao, nomeCliente }: { pedidoId: string; expiraEm: string; demo: boolean; cartao: boolean; nomeCliente: string }) {
   const router = useRouter();
   const relogio = useRelogio(expiraEm);
   const [aba, setAba] = useState<"pix" | "cartao">("pix");
@@ -75,17 +75,17 @@ export function Pagamento({ pedidoId, expiraEm, demo, nomeCliente }: { pedidoId:
         <span className={`rounded-full border px-3 py-1 font-semibold tabular-nums ${relogio.resta < 120000 ? "border-perigo/60 text-perigo" : "border-ouro/50 text-ouro"}`}>{relogio.texto}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 rounded-full border border-linha bg-carvao p-1">
+      {cartao && <div className="grid grid-cols-2 gap-2 rounded-full border border-linha bg-carvao p-1">
         {(["pix", "cartao"] as const).map((a) => (
           <button key={a} onClick={() => { setAba(a); setErro(null); }} className={`rounded-full py-2.5 text-xs font-semibold uppercase tracking-[0.25em] transition ${aba === a ? "ouro-gradiente text-noir" : "text-fumaca hover:text-marfim"}`}>
             {a === "pix" ? "Pix" : "Cartão"}
           </button>
         ))}
-      </div>
+      </div>}
 
       {demo && (
         <p className="rounded-xl border border-ouro/30 bg-ouro/5 px-4 py-3 text-center text-xs text-ouro-claro">
-          Modo demonstração: o PagBank ainda não foi conectado. Nenhuma cobrança real é feita.
+          Modo demonstração: nenhum meio de pagamento foi conectado ainda. Nenhuma cobrança real é feita.
         </p>
       )}
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { authClient } from "./supabase-server";
 import { db } from "./supabase-admin";
@@ -33,8 +34,11 @@ export function pode(staff: Pick<Staff, "papel"> | null, recurso: keyof typeof P
 
 type Situacao = { staff: Staff | null; precisaMfa: boolean; semMfaCadastrado: boolean };
 
-/** Staff logado + situação da verificação em 2 etapas. Qualquer erro = sem acesso (falha fechado). */
-export async function staffAtual(): Promise<Situacao> {
+/**
+ * Staff logado + situação da verificação em 2 etapas. Qualquer erro = sem acesso (falha fechado).
+ * Uma consulta por requisição: menu e página reaproveitam o mesmo resultado.
+ */
+export const staffAtual = cache(async (): Promise<Situacao> => {
   try {
     const sb = await authClient();
     const { data: { user } } = await sb.auth.getUser();
@@ -48,7 +52,7 @@ export async function staffAtual(): Promise<Situacao> {
   } catch {
     return { staff: null, precisaMfa: false, semMfaCadastrado: false };
   }
-}
+});
 
 export async function exigirStaff(recurso?: keyof typeof PERMISSOES, opcoes: { permitirSemMfa?: boolean } = {}): Promise<Staff> {
   const { staff, precisaMfa, semMfaCadastrado } = await staffAtual();

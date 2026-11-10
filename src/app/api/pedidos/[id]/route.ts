@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase-admin";
-import { modoDemo } from "@/lib/env";
+import { consultarSyncpay } from "@/lib/syncpay";
 import { consultarPedido } from "@/lib/pagbank";
 import { confirmarPagamentoGateway } from "@/lib/pedidos";
 import { dentroDoLimite, ipDe, respostaLimite } from "@/lib/seguranca";
@@ -12,15 +12,23 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
   if (!(await dentroDoLimite(`status:${ipDe(req.headers)}`, 400, 600))) return respostaLimite();
-  const { data: p } = await db().from("glam_pedidos").select("id,status,expira_em,pagbank_order_id").eq("id", id).maybeSingle();
+  const { data: p } = await db().from("glam_pedidos").select("id,status,expira_em,pagbank_order_id,gateway,gateway_tx_id").eq("id", id).maybeSingle();
   if (!p) return NextResponse.json({ erro: "Pedido não encontrado." }, { status: 404 });
 
-  // Plano B se o aviso do PagBank atrasar: consulta a API (no máximo a cada 10 s por pedido)
-  if (p.status === "pendente" && p.pagbank_order_id && !modoDemo() && (await dentroDoLimite(`pb:${id}`, 1, 10))) {
+  // Plano B se o aviso do gateway atrasar: consulta a API dele (no máximo a cada 10 s por pedido)
+  const noSyncpay = p.gateway === "syncpay" && !!p.gateway_tx_id;
+  const noPagbank = !noSyncpay && p.gateway !== "demo" && !!p.pagbank_order_id;
+  if (p.status === "pendente" && (noSyncpay || noPagbank) && (await dentroDoLimite(`pb:${id}`, 1, 10))) {
     try {
-      const r = await consultarPedido(p.pagbank_order_id);
-      if (r.pago) {
-        await confirmarPagamentoGateway(p.id, r.valorPago, r.chargeId, r.metodo === "PIX" ? "pix" : "cartao");
+      let pago = false;
+      if (noSyncpay) {
+        const r = await consultarSyncpay(p.gateway_tx_id);
+        if (r.pago) { pago = true; await confirmarPagamentoGateway(p.id, r.valorPago, p.gateway_tx_id, "pix"); }
+      } else {
+        const r = await consultarPedido(p.pagbank_order_id);
+        if (r.pago) { pago = true; await confirmarPagamentoGateway(p.id, r.valorPago, r.chargeId, r.metodo === "PIX" ? "pix" : "cartao"); }
+      }
+      if (pago) {
         const { data: depois } = await db().from("glam_pedidos").select("status").eq("id", id).single();
         return NextResponse.json({ status: depois?.status || "pendente" });
       }

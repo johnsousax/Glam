@@ -3,7 +3,7 @@ import { createHash } from "crypto";
 import { db } from "@/lib/supabase-admin";
 import { consultarPedido, tokenWebhook } from "@/lib/pagbank";
 import { confirmarPagamentoGateway } from "@/lib/pedidos";
-import { env, modoDemo } from "@/lib/env";
+import { pagamentos } from "@/lib/gateways";
 import { falhaInterna, iguaisSeguro, ipDe, logSeguranca } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,8 @@ export const dynamic = "force-dynamic";
  * 5. só libera se o valor pago bater com o total do pedido.
  */
 export async function POST(req: Request) {
-  if (modoDemo()) return NextResponse.json({ ok: true });
+  const { pagbank } = await pagamentos();
+  if (!pagbank) return NextResponse.json({ ok: true });
   const k = new URL(req.url).searchParams.get("k");
   if (!iguaisSeguro(k, tokenWebhook())) {
     logSeguranca("webhook_token_invalido", { ip: ipDe(req.headers) });
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   const assinatura = req.headers.get("x-authenticity-token");
   if (assinatura) {
-    const esperado = createHash("sha256").update(`${env.pagbankToken}-${bruto}`).digest("hex");
+    const esperado = createHash("sha256").update(`${pagbank.token}-${bruto}`).digest("hex");
     if (!iguaisSeguro(assinatura.toLowerCase(), esperado)) {
       logSeguranca("webhook_assinatura_invalida", { ip: ipDe(req.headers) });
       return new NextResponse("assinatura inválida", { status: 401 });

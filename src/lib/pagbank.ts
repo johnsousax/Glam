@@ -1,16 +1,19 @@
 import "server-only";
 import { env } from "./env";
+import { pagamentos } from "./gateways";
 import { soDigitos } from "./format";
 import { createHmac } from "crypto";
 
 // API de Pedidos do PagBank: https://developer.pagbank.com.br/reference/criar-pedido
-const BASE = () => (env.pagbankEnv === "production" ? "https://api.pagseguro.com" : "https://sandbox.api.pagseguro.com");
+const BASE = (ambiente: string) => (ambiente === "production" ? "https://api.pagseguro.com" : "https://sandbox.api.pagseguro.com");
 
 async function chamar<T = any>(path: string, init: RequestInit = {}): Promise<T> {
-  const r = await fetch(BASE() + path, {
+  const { pagbank } = await pagamentos();
+  if (!pagbank) throw new Error("PagBank: sem credenciais");
+  const r = await fetch(BASE(pagbank.ambiente) + path, {
     ...init,
     headers: {
-      Authorization: `Bearer ${env.pagbankToken}`,
+      Authorization: `Bearer ${pagbank.token}`,
       "content-type": "application/json",
       accept: "application/json",
       ...(init.headers || {}),
@@ -118,15 +121,17 @@ export async function consultarPedido(orderId: string) {
   return { referencia: order.reference_id as string, pago: !!pago, valorPago, chargeId: pago?.id as string | undefined, metodo: pago?.payment_method?.type as string | undefined };
 }
 
-let chavePublicaCache: string | null = null;
+let chavePublicaCache: { de: string; chave: string } | null = null;
 export async function chavePublicaCartao() {
-  if (chavePublicaCache) return chavePublicaCache;
+  const { pagbank } = await pagamentos();
+  const de = `${pagbank?.ambiente}:${pagbank?.token.slice(-6)}`;
+  if (chavePublicaCache?.de === de) return chavePublicaCache.chave;
+  let chave: string;
   try {
-    const r = await chamar("/public-keys/card");
-    chavePublicaCache = r.public_key;
+    chave = (await chamar("/public-keys/card")).public_key;
   } catch {
-    const r = await chamar("/public-keys", { method: "POST", body: JSON.stringify({ type: "card" }) });
-    chavePublicaCache = r.public_key;
+    chave = (await chamar("/public-keys", { method: "POST", body: JSON.stringify({ type: "card" }) })).public_key;
   }
-  return chavePublicaCache!;
+  chavePublicaCache = { de, chave };
+  return chave;
 }

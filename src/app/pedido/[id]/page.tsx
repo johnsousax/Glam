@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Cabecalho } from "@/components/Cabecalho";
 import { pedidoCompleto } from "@/lib/pedidos";
 import { configCasa } from "@/lib/config";
-import { modoDemo } from "@/lib/env";
+import { pagamentos } from "@/lib/gateways";
 import { brl, dataLonga, hora, SETORES } from "@/lib/format";
 import { Pagamento } from "./Pagamento";
 import { RastreioCompra } from "./RastreioCompra";
@@ -19,6 +19,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
   const p = await pedidoCompleto(id);
   if (!p) notFound();
   const casa = await configCasa();
+  const pg = await pagamentos();
   const comprador = await compradorDoPedido(p.id, p.acesso_hash);
   const emailMascarado = mascararEmail(p.cliente?.email);
   const expirado = p.status === "expirado" || (p.status === "pendente" && new Date(p.expira_em) < new Date());
@@ -89,7 +90,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
             <Link href={`/festa/${p.festa.slug}`} className="btn-ouro ouro-gradiente mt-6">Comprar de novo</Link>
           </section>
         ) : p.status === "pendente" ? (
-          <Pagamento pedidoId={p.id} expiraEm={p.expira_em} demo={modoDemo()} nomeCliente={p.cliente?.nome || ""} />
+          <Pagamento pedidoId={p.id} expiraEm={p.expira_em} demo={pg.demo} cartao={pg.demo || pg.cartao} nomeCliente={p.cliente?.nome || ""} />
         ) : (
           <section className="cartao p-8 text-center">
             <h2 className="font-display text-3xl">Pedido {p.status}</h2>

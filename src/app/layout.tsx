@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   description: "GLAM, a casinha mais amada de São Luís. Compre seus ingressos pelo Pix ou cartão e receba o QR na hora.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   openGraph: { title: "GLAM House · Ingressos", description: "A casinha mais amada de São Luís.", type: "website", locale: "pt_BR" },
-  icons: { icon: "/icon.png" },
+  icons: { icon: "/icon.png", apple: "/apple-icon.png" },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = { themeColor: "#0a0908", width: "device-width", initialScale: 1 };

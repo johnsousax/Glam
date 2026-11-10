@@ -11,5 +11,3 @@ export const env = {
   cpfKey: process.env.CPF_ENCRYPTION_KEY || "",
 };
 
-/** Sem token do PagBank o sistema roda em "modo demonstração" (pagamento simulado). */
-export const modoDemo = () => !env.pagbankToken;
