@@ -65,7 +65,7 @@ export async function Pagamentos() {
       <div className="cartao mt-4 p-5">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h3 className="font-semibold">E-mail <span className="font-normal text-fumaca">· Resend (ingressos em PDF)</span></h3>
-          {resend ? <Selo cor="sucesso">ligado{resend.final ? ` ···${resend.final}` : ""}</Selo> : <Selo cor="perigo">desligado</Selo>}
+          {resend ? <Selo cor="sucesso">ligado{resend.final ? ` ···${resend.final}` : ""}</Selo> : process.env.RESEND_API_KEY ? <Selo cor="sucesso">ligado pelo servidor</Selo> : <Selo cor="perigo">desligado</Selo>}
         </div>
         <FormAcao acao={salvarResend} className="space-y-3" limparAoSalvar>
           <div><label className="rotulo">Chave de API do Resend</label><input name="chave" type="password" className="campo font-mono" autoComplete="new-password" required placeholder={resend ? "Cole para trocar" : "re_..."} /></div>
