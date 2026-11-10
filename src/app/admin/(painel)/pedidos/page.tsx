@@ -3,7 +3,7 @@ import { db } from "@/lib/supabase-admin";
 import { exigirStaff, pode } from "@/lib/staff";
 import { brl, dataHora } from "@/lib/format";
 import { Selo, STATUS_PEDIDO, Titulo } from "@/components/admin/Titulo";
-import { FormAcao, Enviar } from "@/components/admin/ui";
+import { Confirmar, FormAcao, Enviar } from "@/components/admin/ui";
 import { cancelarPedido, confirmarManual, reenviarIngressos } from "../../acoes";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +59,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                 </div>
                 <div className="flex flex-col gap-3">
                   {p.status === "pago" && (
-                    <form action={reenviarIngressos}><input type="hidden" name="id" value={p.id} /><button className="btn-linha w-full">Reenviar ingressos (e-mail + WhatsApp)</button></form>
+                    <FormAcao acao={reenviarIngressos}><input type="hidden" name="id" value={p.id} /><Confirmar mensagem={`Reenviar os ingressos do pedido ${p.codigo} para ${p.cliente.email}?`} className="btn-linha w-full">Reenviar ingressos</Confirmar></FormAcao>
                   )}
                   {podeCancelar && p.status === "pendente" && (
                     <form action={confirmarManual}><input type="hidden" name="id" value={p.id} /><button className="btn-linha w-full">Confirmar pagamento manualmente</button></form>

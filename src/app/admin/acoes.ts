@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/supabase-admin";
 import { auditar, exigirStaff } from "@/lib/staff";
+import { dentroDoLimite } from "@/lib/seguranca";
 import { localParaIso, slugify } from "@/lib/format";
 import { salvarCliente } from "@/lib/clientes";
 import { confirmarPagamento, payloadNotificacao, traduzirErro } from "@/lib/pedidos";
@@ -196,13 +197,19 @@ export async function cancelarPedido(_: Estado, f: FormData): Promise<Estado> {
   return { ok: true, msg: p.status === "pago" && (p.metodo === "pix" || p.metodo === "cartao") ? "Cancelado. Faça o estorno no app do PagBank." : "Pedido cancelado." };
 }
 
-export async function reenviarIngressos(f: FormData) {
+export async function reenviarIngressos(_: Estado, f: FormData): Promise<Estado> {
   const staff = await exigirStaff("pedidos");
   const id = txt(f, "id");
+  if (!(await dentroDoLimite(`reenvio:${id}`, 5, 600))) return { erro: "Já reenviado várias vezes. Aguarde alguns minutos." };
   const payload = await payloadNotificacao(id);
-  if (payload) await dispararN8n("pedido_pago", { ...payload, reenvio: true }, payload.pedido.codigo);
+  if (!payload) return { erro: "Pedido não encontrado." };
+  const inicio = new Date().toISOString();
+  await dispararN8n("pedido_pago", { ...payload, reenvio: true }, payload.pedido.codigo);
   await auditar(staff, "ingressos_reenviados", "pedido", id);
+  const { data: n } = await db().from("glam_notificacoes").select("status").eq("evento", "email_pedido_pago").eq("referencia", payload.pedido.codigo).gte("criado_em", inicio).order("id", { ascending: false }).limit(1).maybeSingle();
   revalidatePath("/admin/pedidos");
+  if (n?.status === "enviado") return { ok: true, msg: `Ingressos reenviados para ${payload.cliente?.email}.` };
+  return { erro: "Não foi possível enviar o e-mail agora. Tente de novo em alguns minutos." };
 }
 
 export async function confirmarManual(f: FormData) {
@@ -265,11 +272,31 @@ export async function salvarCupom(_: Estado, f: FormData): Promise<Estado> {
     ativo: true,
   };
   if (!dados.codigo || dados.valor <= 0) return { erro: "Informe código e valor." };
+  const id = txt(f, "id");
+  if (id) {
+    const { ativo: _a, ...edicao } = dados;
+    const { error } = await db().from("glam_cupons").update(edicao).eq("id", id);
+    if (error) return { erro: error.code === "23505" ? "Já existe um cupom com esse código." : falhaInterna("cupom", error).mensagem };
+    await auditar(staff, "cupom_editado", "cupom", id, edicao);
+    revalidatePath("/admin/cupons");
+    return { ok: true, msg: "Cupom salvo." };
+  }
   const { error } = await db().from("glam_cupons").insert(dados);
   if (error) return { erro: error.code === "23505" ? "Já existe um cupom com esse código." : falhaInterna("cupom", error).mensagem };
   await auditar(staff, "cupom_criado", "cupom", dados.codigo, dados);
   revalidatePath("/admin/cupons");
   return { ok: true, msg: "Cupom criado." };
+}
+
+/** Exclui o cupom; se já foi usado em algum pedido, só desativa (o histórico fica). */
+export async function excluirCupom(f: FormData) {
+  const staff = await exigirStaff("cupons");
+  const id = txt(f, "id");
+  const { count } = await db().from("glam_pedidos").select("id", { count: "exact", head: true }).eq("cupom_id", id);
+  if (count) await db().from("glam_cupons").update({ ativo: false }).eq("id", id);
+  else await db().from("glam_cupons").delete().eq("id", id);
+  await auditar(staff, count ? "cupom_desativado" : "cupom_excluido", "cupom", id);
+  revalidatePath("/admin/cupons");
 }
 
 export async function alternarCupom(f: FormData) {

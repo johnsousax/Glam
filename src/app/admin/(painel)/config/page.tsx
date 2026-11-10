@@ -20,9 +20,8 @@ export default async function Config() {
   return (
     <>
       <Titulo sup="Casa" titulo="Configurações" />
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <div className="cartao p-4"><p className="rotulo">Pagamentos</p>{pg.demo ? <Selo cor="ouro">modo demonstração</Selo> : <Selo cor="sucesso">{pg.pix === "syncpay" ? "Pix pela SyncPay" : "Pix pelo PagBank"}</Selo>}</div>
-        <div className="cartao p-4"><p className="rotulo">Automações n8n</p>{env.n8nWebhookUrl ? <Selo cor="sucesso">conectado</Selo> : <Selo cor="perigo">sem webhook</Selo>}</div>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <div className="cartao p-4"><p className="rotulo">Pagamentos</p>{pg.demo ? <Selo cor="ouro">aguardando conexão</Selo> : <Selo cor="sucesso">recebendo</Selo>}</div>
         <div className="cartao p-4"><p className="rotulo">Endereço do site</p><p className="truncate text-sm">{env.siteUrl}</p></div>
       </div>
       <Pagamentos />
@@ -36,8 +35,8 @@ export default async function Config() {
         {campo("whatsapp_casa", "WhatsApp da casa", "Botão “Avisar a GLAM” após a compra. Ex.: 5598985840529")}
         {campo("whatsapp_dono", "WhatsApp do dono", "Recebe: lote esgotado, relatório do dia seguinte e alerta de site fora do ar.")}
         {campo("email_dono", "E-mail do dono", "Recebe o relatório e a cópia de segurança diária.")}
-        {campo("email_remetente", "Remetente dos e-mails", "Domínio verificado no Resend. Ex.: GLAM House <ingressos@glam.com.br>")}
-        {campo("evolution_instancia", "Instância do WhatsApp (Evolution)", "Deixe “glam” — é a instância conectada pelo botão acima.")}
+        <input type="hidden" name="email_remetente" value={c.email_remetente || ""} />
+        <input type="hidden" name="evolution_instancia" value={c.evolution_instancia || "glam"} />
         <div><label className="rotulo">Comissão padrão dos promoters (%)</label><input name="comissao_padrao" className="campo" defaultValue={c.comissao_padrao} /></div>
         <div className="sm:col-span-2"><Enviar>Salvar configurações</Enviar></div>
       </FormAcao>
