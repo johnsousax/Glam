@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { SairPara } from "@/components/admin/Fechar";
 import { db } from "@/lib/supabase-admin";
 import { exigirStaff } from "@/lib/staff";
 import { brl, dataHora, dataLonga, hora, SETORES } from "@/lib/format";
@@ -39,6 +40,7 @@ export default async function Relatorio({ params }: { params: Promise<{ id: stri
       <div className="nao-imprimir mb-6 flex flex-wrap gap-2">
         <Imprimir />
         <a href={`/admin/festas/${id}/relatorio/csv`} className="btn-linha">Baixar planilha (CSV)</a>
+        <SairPara href={`/admin/festas/${id}`} rotulo="Voltar para a festa" />
       </div>
       <div className="cartao space-y-8 p-8">
         <header className="flex items-start justify-between gap-6">

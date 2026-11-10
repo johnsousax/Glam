@@ -17,7 +17,7 @@ export default async function Termos() {
       <h2>Pagamento e reserva</h2>
       <ul>
         <li>Pagamento por Pix ou cartão de crédito à vista, processado pelo PagBank.</li>
-        <li>A vaga fica reservada por 15 minutos enquanto o pagamento não é confirmado. Depois disso, volta para a venda.</li>
+        <li>O ingresso fica reservado por 15 minutos enquanto o pagamento não é confirmado. Depois disso, volta para a venda.</li>
         <li>O ingresso só é emitido depois que o PagBank confirma o pagamento.</li>
       </ul>
       <h2>Cancelamento e reembolso</h2>

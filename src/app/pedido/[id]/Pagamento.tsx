@@ -71,7 +71,7 @@ export function Pagamento({ pedidoId, expiraEm, demo, cartao, nomeCliente }: { p
   return (
     <section className="surge space-y-5" style={{ animationDelay: ".2s" }}>
       <div className="flex items-center justify-center gap-3 text-sm">
-        <span className="text-fumaca">Sua vaga está reservada por</span>
+        <span className="text-fumaca">Seu ingresso está reservado por</span>
         <span className={`rounded-full border px-3 py-1 font-semibold tabular-nums ${relogio.resta < 120000 ? "border-perigo/60 text-perigo" : "border-ouro/50 text-ouro"}`}>{relogio.texto}</span>
       </div>
 

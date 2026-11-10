@@ -86,7 +86,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
         ) : expirado ? (
           <section className="cartao p-8 text-center">
             <h2 className="font-display text-3xl">O tempo de reserva acabou</h2>
-            <p className="mt-2 text-sm text-fumaca">As vagas voltaram para a venda. Faça um novo pedido para garantir o seu.</p>
+            <p className="mt-2 text-sm text-fumaca">Os ingressos voltaram para a venda. Faça um novo pedido para garantir o seu.</p>
             <Link href={`/festa/${p.festa.slug}`} className="btn-ouro ouro-gradiente mt-6">Comprar de novo</Link>
           </section>
         ) : p.status === "pendente" ? (

@@ -1,15 +1,17 @@
 import { pagamentos } from "@/lib/gateways";
 import { Selo } from "@/components/admin/Titulo";
 import { FormAcao, Enviar, Confirmar } from "@/components/admin/ui";
-import { desconectarGateway, escolherPix, salvarPagbank, salvarSyncpay } from "../../pagamentos-acoes";
+import { desconectarGateway, escolherPix, salvarPagbank, salvarResend, salvarSyncpay } from "../../pagamentos-acoes";
+import { db } from "@/lib/supabase-admin";
 
 /** Configurações › Pagamentos: SyncPay (Pix) e PagBank (Pix e cartão). */
 export async function Pagamentos() {
   const pg = await pagamentos();
+  const { data: resend } = await db().from("glam_segredos").select("final").eq("chave", "resend").maybeSingle();
   const nome = { syncpay: "SyncPay", pagbank: "PagBank", demo: "nenhum (modo demonstração)" }[pg.pix];
   return (
     <section className="mb-6 max-w-4xl">
-      <h2 className="mb-1 text-lg font-semibold">Pagamentos</h2>
+      <h2 className="mb-1 text-lg font-semibold">Pagamentos e e-mail</h2>
       <p className="mb-4 text-sm text-fumaca">
         Pix recebido por: <b className="text-marfim">{nome}</b> · Cartão: <b className="text-marfim">{pg.cartao ? "PagBank" : "desligado"}</b>
         {pg.demo && " · conecte uma conta abaixo para começar a cobrar de verdade."}
@@ -58,6 +60,24 @@ export async function Pagamentos() {
             </form>
           )}
         </div>
+      </div>
+
+      <div className="cartao mt-4 p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="font-semibold">E-mail <span className="font-normal text-fumaca">· Resend (ingressos em PDF)</span></h3>
+          {resend ? <Selo cor="sucesso">ligado{resend.final ? ` ···${resend.final}` : ""}</Selo> : <Selo cor="perigo">desligado</Selo>}
+        </div>
+        <FormAcao acao={salvarResend} className="space-y-3" limparAoSalvar>
+          <div><label className="rotulo">Chave de API do Resend</label><input name="chave" type="password" className="campo font-mono" autoComplete="new-password" required placeholder={resend ? "Cole para trocar" : "re_..."} /></div>
+          <p className="text-xs text-fumaca">No Resend: API Keys › Create API Key › permissão “Sending access”, domínio glamhouse.site. Ao salvar, mando um e-mail de teste para você.</p>
+          <Enviar>{resend ? "Trocar chave" : "Ligar e-mails"}</Enviar>
+        </FormAcao>
+        {resend && (
+          <form action={desconectarGateway} className="mt-3">
+            <input type="hidden" name="gateway" value="resend" />
+            <Confirmar mensagem="Desligar os e-mails? Os ingressos deixam de ir por e-mail." className="text-xs text-fumaca underline hover:text-perigo">Desligar</Confirmar>
+          </form>
+        )}
       </div>
 
       {pg.syncpay && pg.pagbank && (

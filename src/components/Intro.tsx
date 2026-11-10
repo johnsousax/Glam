@@ -4,11 +4,13 @@ import { Logo } from "./Logo";
 
 const FRASE = ["a", "casinha", "mais", "amada", "de", "São", "Luís"];
 
-/** Abertura: toca toda vez que a página é carregada/atualizada e depois some sozinha. */
+/** Abertura: toca uma vez por visita (cookie de sessão) ou quando tocam no logo do topo; depois some sozinha. */
 export function Intro() {
   const [fase, setFase] = useState<"mostra" | "sai" | "oculta">("mostra");
 
   useEffect(() => {
+    document.cookie = "glam_abertura=1; path=/; SameSite=Lax; Secure";
+    if (location.search.includes("abertura=")) history.replaceState(null, "", "/");
     document.documentElement.style.overflow = "hidden";
     const t1 = setTimeout(() => setFase("sai"), 4000);
     const t2 = setTimeout(() => { setFase("oculta"); document.documentElement.style.overflow = ""; }, 5000);

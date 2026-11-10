@@ -3,6 +3,7 @@ import { db } from "@/lib/supabase-admin";
 import { exigirStaff } from "@/lib/staff";
 import { hora } from "@/lib/format";
 import { Selo, Titulo } from "@/components/admin/Titulo";
+import { SairPara } from "@/components/admin/Fechar";
 import { FormAcao, Enviar, Confirmar } from "@/components/admin/ui";
 import { adicionarLista, checkinLista, removerLista } from "../../../../acoes";
 
@@ -22,7 +23,7 @@ export default async function Lista({ params, searchParams }: { params: Promise<
 
   return (
     <>
-      <Titulo sup={festa.titulo} titulo="Lista de nomes"><Selo cor="ouro">{entraram}/{total} entraram</Selo></Titulo>
+      <Titulo sup={festa.titulo} titulo="Lista de nomes"><Selo cor="ouro">{entraram}/{total} entraram</Selo><SairPara href={`/admin/festas/${id}`} rotulo="Voltar para a festa" /></Titulo>
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div>
           <form className="mb-4"><input name="q" defaultValue={q} placeholder="Buscar nome…" className="campo" /></form>

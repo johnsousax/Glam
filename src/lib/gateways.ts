@@ -61,8 +61,8 @@ export async function pagamentos(): Promise<Pagamentos> {
 
 const final = (s: string) => (s.length >= 8 ? s.slice(-4) : "");
 
-export async function guardarCredencial(chave: "syncpay" | "pagbank", valor: CredSyncpay | CredPagbank, staffId: string) {
-  const ref = chave === "syncpay" ? (valor as CredSyncpay).clientId : (valor as CredPagbank).token;
+export async function guardarCredencial(chave: "syncpay" | "pagbank" | "resend", valor: CredSyncpay | CredPagbank | { chave: string }, staffId: string) {
+  const ref = chave === "syncpay" ? (valor as CredSyncpay).clientId : chave === "resend" ? (valor as { chave: string }).chave : (valor as CredPagbank).token;
   const { error } = await db().from("glam_segredos").upsert({
     chave, valor_cifrado: cifrar(JSON.stringify(valor)), final: final(ref), atualizado_em: new Date().toISOString(), atualizado_por: staffId,
   });
@@ -70,7 +70,7 @@ export async function guardarCredencial(chave: "syncpay" | "pagbank", valor: Cre
   if (error) throw new Error(error.message);
 }
 
-export async function removerCredencial(chave: "syncpay" | "pagbank") {
+export async function removerCredencial(chave: "syncpay" | "pagbank" | "resend") {
   const { error } = await db().from("glam_segredos").delete().eq("chave", chave);
   esquecerPagamentos();
   if (error) throw new Error(error.message);

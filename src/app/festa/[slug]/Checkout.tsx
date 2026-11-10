@@ -63,7 +63,8 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
           itens: escolhidos.map((e) => ({
             lote_id: e.lote.id,
             quantidade: e.q,
-            nomes: (nomes[e.lote.id] || []).slice(0, e.q * e.lote.pessoas_por_unidade),
+            nomes: Array.from({ length: e.q * e.lote.pessoas_por_unidade }, (_, i) =>
+              e === escolhidos[0] && i === 0 ? cliente.nome.trim() : (nomes[e.lote.id]?.[i] || "").trim()),
           })),
         }),
       });
@@ -121,20 +122,28 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
                   </div>
                 )}
               </div>
-              {l && q > 0 && (
+              {l && q > 0 && (() => {
+                const antes = escolhidos.findIndex((e) => e.lote.id === l.id);
+                const deslocamento = escolhidos.slice(0, Math.max(0, antes)).reduce((t, e) => t + e.q * e.lote.pessoas_por_unidade, 0);
+                const total = q * l.pessoas_por_unidade;
+                const visiveis = Array.from({ length: total }, (_, i) => i).filter((i) => deslocamento + i > 0);
+                if (!visiveis.length) return null;
+                return (
                 <div className="mt-4 grid gap-2 border-t border-linha pt-4 sm:grid-cols-2">
-                  {Array.from({ length: q * l.pessoas_por_unidade }).map((_, i) => (
+                  <p className="text-xs text-fumaca sm:col-span-2">O 1º ingresso fica no seu nome. Informe o nome de quem vai usar os outros — cada pessoa recebe o ingresso dela em PDF.</p>
+                  {visiveis.map((i) => (
                     <input
                       key={i}
                       className="campo !py-2.5 text-sm"
-                      placeholder={`Nome da pessoa ${i + 1}${i === 0 ? " (pode ser você)" : ""}`}
+                      placeholder={`Nome completo da pessoa ${deslocamento + i + 1}`}
                       value={nomes[l.id]?.[i] || ""}
                       onChange={(e) => setNomes((n) => { const arr = [...(n[l.id] || [])]; arr[i] = e.target.value; return { ...n, [l.id]: arr }; })}
                       maxLength={80}
                     />
                   ))}
                 </div>
-              )}
+                );
+              })()}
             </div>
           );
         })}
@@ -191,9 +200,9 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
           {erro && <p className="rounded-xl border border-perigo/40 bg-perigo/10 px-4 py-3 text-sm text-perigo">{erro}</p>}
 
           <button disabled={enviando} className="btn-ouro ouro-gradiente w-full !py-4">
-            {enviando ? "Reservando sua vaga…" : `Ir para o pagamento · ${brl(total)}`}
+            {enviando ? "Reservando seu ingresso…" : `Ir para o pagamento · ${brl(total)}`}
           </button>
-          <p className="text-center text-[0.65rem] uppercase tracking-[0.25em] text-fumaca/70">Vaga reservada por 15 minutos · Pix ou cartão</p>
+          <p className="text-center text-[0.65rem] uppercase tracking-[0.25em] text-fumaca/70">Ingresso reservado por 15 minutos</p>
         </section>
       )}
       {escolhidos.length === 0 && erro && <p className="text-sm text-perigo">{erro}</p>}

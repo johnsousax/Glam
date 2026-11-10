@@ -2,6 +2,7 @@ import "server-only";
 import { env } from "./env";
 import { db } from "./supabase-admin";
 import { iguaisSeguro } from "./seguranca";
+import { enviarEmailsDoEvento } from "./email";
 
 export type EventoGlam =
   | "pedido_pago"
@@ -42,6 +43,8 @@ export async function dispararN8n(evento: EventoGlam, dados: Record<string, unkn
   try {
     await db().from("glam_notificacoes").insert({ evento, referencia, status, detalhes: erro ? { erro } : null });
   } catch {}
+  // E-mail sai direto pelo site (o n8n fica só com o WhatsApp)
+  if (evento !== "config") await enviarEmailsDoEvento(evento, dados, referencia);
   return status;
 }
 

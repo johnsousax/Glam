@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { brl, dataHora, SETORES } from "@/lib/format";
 import { Kpi, Selo, Titulo } from "@/components/admin/Titulo";
 import { Confirmar } from "@/components/admin/ui";
+import { FecharJanela, SairPara } from "@/components/admin/Fechar";
 import type { Festa } from "@/lib/tipos";
 import { FestaForm } from "../FestaForm";
 import { LoteForm } from "./LoteForm";
@@ -37,8 +38,9 @@ export default async function EditarFesta({ params, searchParams }: { params: Pr
         <Link href={`/admin/festas/${id}/lista`} className="btn-linha">Lista de nomes</Link>
         <Link href={`/admin/festas/${id}/relatorio`} className="btn-linha">Relatório</Link>
         <Link href={`/portaria?festa=${id}`} className="btn-linha">Portaria</Link>
+        <SairPara href="/admin/festas" rotulo="Voltar para as festas" />
       </Titulo>
-      {nova && <p className="mb-6 rounded-lg border border-sucesso/40 bg-sucesso/10 px-4 py-2 text-sm text-sucesso">Festa criada! Agora cadastre os lotes e mude a situação para “Publicada”.</p>}
+      {nova && <p className="mb-6 rounded-lg border border-sucesso/40 bg-sucesso/10 px-4 py-2 text-sm text-sucesso">Festa criada! Agora cadastre os lotes. Ela já está como “Ativo” no site.</p>}
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi rotulo="Ingressos vendidos" valor={String(c?.ingressos || 0)} sub={`${c?.ocupado || 0}/${f.lotacao} pessoas (com reservas)`} />
@@ -67,7 +69,10 @@ export default async function EditarFesta({ params, searchParams }: { params: Pr
                     <details className="inline-block text-left">
                       <summary className="cursor-pointer text-xs text-ouro">Editar</summary>
                       <div className="fixed inset-x-4 top-20 z-40 max-h-[80vh] overflow-auto rounded-2xl border border-ouro/40 bg-carvao p-5 shadow-2xl lg:left-[290px]">
-                        <p className="mb-3 font-display text-2xl">{l.nome}</p>
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p className="font-display text-2xl">{l.nome}</p>
+                          <FecharJanela />
+                        </div>
                         <LoteForm festaId={id} lote={l} />
                         <form action={excluirLote} className="mt-4">
                           <input type="hidden" name="id" value={l.id} /><input type="hidden" name="festa_id" value={id} />

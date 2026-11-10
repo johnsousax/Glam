@@ -50,8 +50,8 @@ if (b.evento === 'alerta_seguranca') {
 if (b.evento === 'pix_lembrete') {
   const c = b.cliente || {};
   const nome = (c.nome || '').split(' ')[0];
-  zap(c.whatsapp, `Oi, ${nome}! 💛 Seu Pix para *${b.festa}* (${b.total_fmt}) ainda não caiu.\nSua vaga fica reservada por mais ${b.minutos_restantes} min — finalize aqui: ${b.url}`);
-  email(c.email, `Falta pouco: seu ingresso para ${b.festa}`, 'Sua vaga está reservada',
+  zap(c.whatsapp, `Oi, ${nome}! 💛 Seu Pix para *${b.festa}* (${b.total_fmt}) ainda não caiu.\nSeu ingresso fica reservado por mais ${b.minutos_restantes} min — finalize aqui: ${b.url}`);
+  email(c.email, `Falta pouco: seu ingresso para ${b.festa}`, 'Seu ingresso está reservado',
     `<p>Oi, <b>${esc(nome)}</b>! Vimos que você gerou o Pix de <b>${esc(b.total_fmt)}</b> para <b style="color:${OURO}">${esc(b.festa)}</b>, mas o pagamento ainda não caiu.</p><p>A reserva vale por mais <b>${b.minutos_restantes} minutos</b>.</p><p align="center" style="text-align:center;margin:28px 0">${botao(b.url, 'Finalizar pagamento')}</p>`);
 }
 
