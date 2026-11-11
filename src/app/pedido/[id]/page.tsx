@@ -20,6 +20,8 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
   if (!p) notFound();
   const [casa, pg, comprador] = await Promise.all([configCasa(), pagamentos(), compradorDoPedido(p.id, p.acesso_hash)]);
   const emailMascarado = mascararEmail(p.cliente?.email);
+  // Cupom de 100% (valor zero) não é compra: é cortesia.
+  const cortesia = p.total_centavos === 0 || p.canal === "cortesia";
   const expirado = p.status === "expirado" || (p.status === "pendente" && new Date(p.expira_em) < new Date());
 
   return (
@@ -51,10 +53,10 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
 
         {p.status === "pago" ? (
           <section className="surge space-y-6 text-center">
-            <RastreioCompra valor={p.total_centavos / 100} />
+            {!cortesia && <RastreioCompra valor={p.total_centavos / 100} />}
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full ouro-gradiente text-4xl text-noir">✓</div>
             <div>
-              <h2 className="font-display text-4xl text-marfim">Pagamento aprovado!</h2>
+              <h2 className="font-display text-4xl text-marfim">{cortesia ? "Cortesia enviada!" : "Pagamento aprovado!"}</h2>
               <p className="mt-2 text-sm text-fumaca">Enviamos os ingressos para <b className="text-marfim">{comprador ? p.cliente?.email : emailMascarado}</b> e para o WhatsApp cadastrado.</p>
             </div>
             {!comprador && (

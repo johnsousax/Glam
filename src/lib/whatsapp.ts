@@ -44,7 +44,10 @@ export async function enviarIngressosWhatsapp(dados: Record<string, any>, refere
     const f = dados.festa || {};
     const nome = String(dados.cliente?.nome || "").split(" ")[0];
     const onde = [f.local || "GLAM House", f.endereco].filter(Boolean).join(" — ");
-    const texto = `Oi, ${nome}! Seu pagamento foi aprovado e seus ingressos estão garantidos ✨\n\n*${f.titulo}*\n${f.data} · ${f.hora}\n${onde}`;
+    // Cupom de 100% (valor zero) não é compra: é cortesia.
+    const cortesia = Number(dados.pedido?.total) === 0 || dados.pedido?.canal === "cortesia";
+    const abertura = cortesia ? "Sua cortesia foi enviada e seu ingresso está garantido ✨" : "Seu pagamento foi aprovado e seus ingressos estão garantidos ✨";
+    const texto = `Oi, ${nome}! ${abertura}\n\n*${f.titulo}*\n${f.data} · ${f.hora}\n${onde}`;
     const t = await enviar({ acao: "enviar_texto", para, texto });
     let falhas = t.ok ? 0 : 1, erro = t.erro || "";
     if (t.ok) {

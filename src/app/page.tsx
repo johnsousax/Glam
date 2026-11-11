@@ -5,17 +5,15 @@ import { FestaCard } from "@/components/FestaCard";
 import { PromoterRef } from "@/components/PromoterRef";
 import { festasPublicadas } from "@/lib/festas";
 import { configCasa } from "@/lib/config";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ abertura?: string }> }) {
-  const [festas, casa, jar, sp] = await Promise.all([festasPublicadas().catch(() => []), configCasa(), cookies(), searchParams]);
-  const abertura = !!sp.abertura || !jar.get("glam_abertura");
+  const [festas, casa, sp] = await Promise.all([festasPublicadas().catch(() => []), configCasa(), searchParams]);
 
   return (
     <>
-      {abertura && <Intro />}
+      <Intro key={sp.abertura ? "forcar" : "normal"} forcar={!!sp.abertura} />
       <PromoterRef />
       <Cabecalho />
       <main className="relative z-10 mx-auto max-w-6xl px-4 pt-10 sm:px-6 sm:pt-14">

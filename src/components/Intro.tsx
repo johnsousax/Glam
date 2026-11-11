@@ -4,17 +4,32 @@ import { Logo } from "./Logo";
 
 const FRASE = ["a", "casinha", "mais", "amada", "de", "São", "Luís"];
 
-/** Abertura: toca uma vez por visita (cookie de sessão) ou quando tocam no logo do topo; depois some sozinha. */
-export function Intro() {
-  const [fase, setFase] = useState<"mostra" | "sai" | "oculta">("mostra");
+// Já tocou nesta abertura do site? (vale enquanto a página não é recarregada)
+let jaTocou = false;
+
+/** Decide no navegador, sem piscar: toca ao entrar no site pela página inicial (link, digitando ou recarregando)
+ *  e ao tocar no logo do topo; não repete ao voltar de uma festa. */
+function deveTocar(forcar: boolean) {
+  if (forcar) return true;
+  if (typeof window === "undefined") return true; // servidor: a página inicial sempre sai com a abertura
+  if (jaTocou) return false;
+  // Entrou direto em outra página (ex.: link da festa) e depois veio para a inicial: não toca
+  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  try { return !nav || new URL(nav.name).pathname === "/"; } catch { return true; }
+}
+
+export function Intro({ forcar = false }: { forcar?: boolean }) {
+  const [fase, setFase] = useState<"mostra" | "sai" | "oculta">(() => (deveTocar(forcar) ? "mostra" : "oculta"));
 
   useEffect(() => {
-    document.cookie = "glam_abertura=1; path=/; SameSite=Lax; Secure";
+    if (fase === "oculta") { jaTocou = true; return; }
+    jaTocou = true;
     if (location.search.includes("abertura=")) history.replaceState(null, "", "/");
     document.documentElement.style.overflow = "hidden";
     const t1 = setTimeout(() => setFase("sai"), 4000);
     const t2 = setTimeout(() => { setFase("oculta"); document.documentElement.style.overflow = ""; }, 5000);
     return () => { clearTimeout(t1); clearTimeout(t2); document.documentElement.style.overflow = ""; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (fase === "oculta") return null;
