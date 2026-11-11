@@ -21,7 +21,7 @@ async function enviarUmaVez(e: Envio): Promise<{ ok: boolean; erro?: string }> {
   const url = process.env.N8N_WHATSAPP_URL;
   if (!url) return { ok: false, erro: "sem_whatsapp" };
   try {
-    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(e), signal: AbortSignal.timeout(40000), cache: "no-store" });
+    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-glam-secret": env.automacaoSecret }, body: JSON.stringify(e), signal: AbortSignal.timeout(40000), cache: "no-store" });
     const j = (await r.json().catch(() => ({}))) as { ok?: boolean; erro?: string };
     return { ok: !!j.ok, erro: j.ok ? undefined : String(j.erro || `HTTP ${r.status}`).slice(0, 300) };
   } catch (err) {

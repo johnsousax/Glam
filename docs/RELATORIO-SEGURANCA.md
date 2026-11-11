@@ -80,3 +80,13 @@ Seções aplicadas: todas, exceto Jogos e Apps mobile, com **Pagamentos reforça
 - Código de pareamento do WhatsApp: só staff com `config`, limite de 10 pedidos a cada 10 min, número validado (só dígitos, DDI 55).
 - Relatório em PDF (`/admin/relatorios/pdf`): `exigirStaff("relatorios")`, parâmetros validados (UUID/data), download registrado na auditoria, `cache-control: no-store`.
 - Ingressos pelo WhatsApp: o site chama o fluxo do WhatsApp da casa no n8n (endereço secreto); número normalizado (só dígitos, DDI 55), PDF em base64 validado e limitado no n8n; resultado registrado em `glam_notificacoes`.
+
+## Auditoria contra o SECURITY.md (11/11/2026)
+
+Achados por ordem de risco:
+1. **Alto — webhooks do n8n só com endereço secreto.** "Conexão do WhatsApp" (envia mensagens e conecta/desconecta o número) e "Eventos do site" não exigem cabeçalho. Correção: o site já manda `x-glam-secret` em todas as chamadas; falta criar no n8n a credencial Header Auth (`x-glam-secret` = `GLAM_AUTOMACAO_SECRET`) e ligar nos dois webhooks.
+2. **Alto (outro sistema, mesmo banco) — funções do Fluxo Zero executáveis por `anon`** (`confirm_payment`, `deliver_order`, `refund_order`, `generate_pix`…) e view `telegram_bots_safe` com SECURITY DEFINER. Não tocam nas tabelas `glam_*`, mas estão no mesmo projeto Supabase. Correção pronta, aguardando autorização.
+3. **Médio — WhatsApp da casa conectado num número da NexusUp** e credencial da Evolution compartilhada ("NexusUp Company v2"). Conectar o celular da GLAM; ideal ter instância/chave próprias e um número reserva.
+4. **Médio — disparos sem consentimento separado.** Por decisão do dono, todo comprador entra na lista (legítimo interesse, aviso na política e descadastro em todo e-mail). O SECURITY.md pede consentimento registrado para marketing: risco aceito pelo dono; WhatsApp promocional continua fora.
+5. **Baixo — proteção de senha vazada do Supabase Auth desligada.** O painel já recusa senha vazada no cadastro do dono; ligar também no Supabase (Auth › Passwords).
+6. **Info — tabelas `glam_*` com RLS ligado e sem política:** é o desenho (só o servidor com service role acessa). `npm audit`: 0 vulnerabilidades.

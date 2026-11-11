@@ -8,6 +8,7 @@ import { localParaIso, slugify } from "@/lib/format";
 import { salvarCliente } from "@/lib/clientes";
 import { confirmarPagamento, payloadNotificacao, traduzirErro } from "@/lib/pedidos";
 import { dispararN8n } from "@/lib/n8n";
+import { env } from "@/lib/env";
 import { numeroZap } from "@/lib/whatsapp";
 import { falhaInterna, senhaVazada } from "@/lib/seguranca";
 import sharp from "sharp";
@@ -412,7 +413,7 @@ export async function whatsappAcao(acao: "conectar" | "codigo" | "status" | "des
     if (!numero) return { ok: false, status: "erro", erro: "Digite o número do WhatsApp da casa com DDD." };
   }
   try {
-    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(numero ? { acao, numero } : { acao }), signal: AbortSignal.timeout(45000), cache: "no-store" });
+    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-glam-secret": env.automacaoSecret }, body: JSON.stringify(numero ? { acao, numero } : { acao }), signal: AbortSignal.timeout(45000), cache: "no-store" });
     const j = (await r.json()) as SituacaoWhatsapp;
     if (acao !== "status") await auditar(staff, `whatsapp_${acao}`, "config", "whatsapp", { status: j.status });
     return { ok: !!j.ok, status: String(j.status || ""), numero: j.numero, perfil: j.perfil, base64: acao === "codigo" ? undefined : j.base64, codigo: j.codigo || undefined, erro: j.erro };
