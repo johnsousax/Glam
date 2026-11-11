@@ -90,3 +90,7 @@ Achados por ordem de risco:
 4. **Médio — disparos sem consentimento separado.** Por decisão do dono, todo comprador entra na lista (legítimo interesse, aviso na política e descadastro em todo e-mail). O SECURITY.md pede consentimento registrado para marketing: risco aceito pelo dono; WhatsApp promocional continua fora.
 5. **Baixo — proteção de senha vazada do Supabase Auth desligada.** O painel já recusa senha vazada no cadastro do dono; ligar também no Supabase (Auth › Passwords).
 6. **Info — tabelas `glam_*` com RLS ligado e sem política:** é o desenho (só o servidor com service role acessa). `npm audit`: 0 vulnerabilidades.
+
+## Desempenho sem abrir mão da segurança (11/11/2026)
+- Sessão da equipe conferida com `getClaims()`: assinatura ES256 verificada localmente (chave pública do Supabase), sem ida ao servidor de login a cada clique. Conta desativada continua barrada na hora porque `glam_staff.ativo` é lido em toda requisição; logout e inatividade de 30 min seguem iguais.
+- Rate limit, Turnstile e antifraude rodam em paralelo (as mesmas regras, menos espera).

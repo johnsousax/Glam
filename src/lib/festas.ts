@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { db } from "./supabase-admin";
 import type { Festa, Lote, LoteVitrine, SetorVitrine } from "./tipos";
 
@@ -20,10 +21,11 @@ export async function festasPublicadas(): Promise<(Festa & { a_partir: number | 
   }));
 }
 
-export async function festaPorSlug(slug: string): Promise<Festa | null> {
+/** Uma consulta por requisição: a página e o título (metadata) reaproveitam o mesmo resultado. */
+export const festaPorSlug = cache(async (slug: string): Promise<Festa | null> => {
   const { data } = await db().from("glam_festas").select("*").eq("slug", slug).maybeSingle();
   return data as Festa | null;
-}
+});
 
 export async function percentualVendido(f: Festa) {
   const { data } = await db().rpc("glam_festa_ocupada", { p_festa_id: f.id });

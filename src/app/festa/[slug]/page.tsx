@@ -39,7 +39,7 @@ export default async function PaginaFesta({ params }: { params: Promise<{ slug: 
             <div className="cartao overflow-hidden">
               {festa.cartaz_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={festa.cartaz_url} alt={festa.titulo} className="aspect-[4/5] w-full object-cover" />
+                <img src={festa.cartaz_url} alt={festa.titulo} fetchPriority="high" decoding="async" className="aspect-[4/5] w-full object-cover" />
               ) : (
                 <div className="flex aspect-[4/5] items-center justify-center bg-grafite p-8 text-center">
                   <span className="font-display text-5xl italic texto-ouro">{festa.titulo}</span>

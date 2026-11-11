@@ -42,11 +42,16 @@ type Situacao = { staff: Staff | null; precisaMfa: boolean; semMfaCadastrado: bo
 export const staffAtual = cache(async (): Promise<Situacao> => {
   try {
     const sb = await authClient();
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return { staff: null, precisaMfa: false, semMfaCadastrado: false };
-    const { data } = await db().from("glam_staff").select("*").eq("user_id", user.id).eq("ativo", true).maybeSingle();
+    // getClaims confere a assinatura do token (ES256) localmente, sem ida ao servidor de login a cada clique.
+    // Equipe desativada continua barrada na hora: a linha de glam_staff (ativo) é lida em toda requisição.
+    const { data: claims, error } = await sb.auth.getClaims();
+    const userId = !error && typeof claims?.claims?.sub === "string" ? claims.claims.sub : null;
+    if (!userId) return { staff: null, precisaMfa: false, semMfaCadastrado: false };
+    const [{ data }, { data: aal }] = await Promise.all([
+      db().from("glam_staff").select("*").eq("user_id", userId).eq("ativo", true).maybeSingle(),
+      sb.auth.mfa.getAuthenticatorAssuranceLevel(),
+    ]);
     const staff = (data as Staff) || null;
-    const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     const precisaMfa = !!aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2";
     const semMfaCadastrado = !!staff && MFA_OBRIGATORIO.includes(staff.papel) && aal?.nextLevel !== "aal2";
     return { staff, precisaMfa, semMfaCadastrado };

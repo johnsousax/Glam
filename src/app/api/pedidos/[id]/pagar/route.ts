@@ -15,8 +15,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
   if (!origemValida(req)) return NextResponse.json({ erro: "Requisição inválida." }, { status: 403 });
   const ip = ipDe(req.headers);
-  if (!(await dentroDoLimite(`pagar:ip:${ip}`, 30, 3600)) || !(await dentroDoLimite(`pagar:pedido:${id}`, 10, 3600))) return respostaLimite();
-  const b = await lerCorpo(req, Pagar, 16_000);
+  const [ipOk, pedidoOk, b] = await Promise.all([dentroDoLimite(`pagar:ip:${ip}`, 30, 3600), dentroDoLimite(`pagar:pedido:${id}`, 10, 3600), lerCorpo(req, Pagar, 16_000)]);
+  if (!ipOk || !pedidoOk) return respostaLimite();
   if (!b) return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });
   const metodo = b.metodo;
 

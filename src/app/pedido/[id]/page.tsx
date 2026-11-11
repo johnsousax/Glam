@@ -18,9 +18,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ id: s
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const p = await pedidoCompleto(id);
   if (!p) notFound();
-  const casa = await configCasa();
-  const pg = await pagamentos();
-  const comprador = await compradorDoPedido(p.id, p.acesso_hash);
+  const [casa, pg, comprador] = await Promise.all([configCasa(), pagamentos(), compradorDoPedido(p.id, p.acesso_hash)]);
   const emailMascarado = mascararEmail(p.cliente?.email);
   const expirado = p.status === "expirado" || (p.status === "pendente" && new Date(p.expira_em) < new Date());
 

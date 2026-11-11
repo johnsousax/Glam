@@ -10,7 +10,7 @@ export function FestaCard({ festa, aPartir, esgotada, percentual, indice = 0 }: 
         <div className="relative aspect-[4/5] overflow-hidden">
           {festa.cartaz_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={festa.cartaz_url} alt={festa.titulo} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+            <img src={festa.cartaz_url} alt={festa.titulo} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-grafite">
               <span className="font-display text-5xl italic texto-ouro">{festa.titulo}</span>

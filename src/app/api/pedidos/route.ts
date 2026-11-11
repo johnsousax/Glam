@@ -13,17 +13,20 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   if (!origemValida(req)) return NextResponse.json({ erro: "Requisição inválida." }, { status: 403 });
   const ip = ipDe(req.headers);
-  if (!(await dentroDoLimite(`pedido:ip:${ip}`, 20, 3600))) return respostaLimite();
-
-  const b = await lerCorpo(req, CriarPedido, 64_000);
+  const [livre, b] = await Promise.all([dentroDoLimite(`pedido:ip:${ip}`, 20, 3600), lerCorpo(req, CriarPedido, 64_000)]);
+  if (!livre) return respostaLimite();
   if (!b) return NextResponse.json({ erro: "Dados inválidos. Confira os campos." }, { status: 400 });
   if (b.site) { logSeguranca("honeypot", { rota: "pedidos", ip }); return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 }); }
-  if (!(await turnstileOk(b.turnstile, ip))) return NextResponse.json({ erro: "Confirme que você não é um robô." }, { status: 400 });
 
-  // Antifraude: limite por CPF e por WhatsApp por hora
+  // Robô + antifraude (limite por CPF e por WhatsApp por hora), tudo ao mesmo tempo
   const cpfHash = hmac(soDigitos(b.cliente.cpf));
-  if (!(await dentroDoLimite(`pedido:cpf:${cpfHash}`, 8, 3600))) return respostaLimite();
-  if (!(await dentroDoLimite(`pedido:tel:${soDigitos(b.cliente.whatsapp)}`, 8, 3600))) return respostaLimite();
+  const [humano, cpfOk, telOk] = await Promise.all([
+    turnstileOk(b.turnstile, ip),
+    dentroDoLimite(`pedido:cpf:${cpfHash}`, 8, 3600),
+    dentroDoLimite(`pedido:tel:${soDigitos(b.cliente.whatsapp)}`, 8, 3600),
+  ]);
+  if (!humano) return NextResponse.json({ erro: "Confirme que você não é um robô." }, { status: 400 });
+  if (!cpfOk || !telOk) return respostaLimite();
 
   try {
     const clienteId = await salvarCliente(b.cliente);

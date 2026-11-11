@@ -64,7 +64,7 @@ export async function proxy(request: NextRequest) {
           },
         },
       });
-      await sb.auth.getUser();
+      await sb.auth.getClaims(); // renova a sessão se precisar; assinatura conferida localmente (ES256)
       resposta.cookies.set("glam_atv", String(Date.now()), { ...opcoesCookieSessao, maxAge: 60 * 60 * 12 });
     }
     resposta.headers.set("Cache-Control", "no-store");
