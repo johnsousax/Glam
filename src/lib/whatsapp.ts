@@ -9,7 +9,15 @@ import { pdfsDoPedido } from "./ingresso-pdf";
  */
 type Envio = { acao: "enviar_texto" | "enviar_documento"; para: string; texto?: string; base64?: string; arquivo?: string };
 
+/** Tenta de novo uma vez: a conexão da Evolution às vezes cai por segundos ("Connection Closed"). */
 async function enviar(e: Envio): Promise<{ ok: boolean; erro?: string }> {
+  const r = await enviarUmaVez(e);
+  if (r.ok || r.erro === "sem_whatsapp") return r;
+  await new Promise((ok) => setTimeout(ok, 3000));
+  return enviarUmaVez(e);
+}
+
+async function enviarUmaVez(e: Envio): Promise<{ ok: boolean; erro?: string }> {
   const url = process.env.N8N_WHATSAPP_URL;
   if (!url) return { ok: false, erro: "sem_whatsapp" };
   try {
