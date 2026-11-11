@@ -8,6 +8,7 @@ import { localParaIso, slugify } from "@/lib/format";
 import { salvarCliente } from "@/lib/clientes";
 import { confirmarPagamento, payloadNotificacao, traduzirErro } from "@/lib/pedidos";
 import { dispararN8n } from "@/lib/n8n";
+import { numeroZap } from "@/lib/whatsapp";
 import { falhaInterna, senhaVazada } from "@/lib/seguranca";
 import sharp from "sharp";
 
@@ -204,12 +205,17 @@ export async function reenviarIngressos(_: Estado, f: FormData): Promise<Estado>
   const payload = await payloadNotificacao(id);
   if (!payload) return { erro: "Pedido não encontrado." };
   const inicio = new Date().toISOString();
-  await dispararN8n("pedido_pago", { ...payload, reenvio: true }, payload.pedido.codigo);
+  await dispararN8n("pedido_pago", { ...payload, reenvio: true }, payload.pedido.codigo, { esperarWhatsapp: true });
   await auditar(staff, "ingressos_reenviados", "pedido", id);
-  const { data: n } = await db().from("glam_notificacoes").select("status").eq("evento", "email_pedido_pago").eq("referencia", payload.pedido.codigo).gte("criado_em", inicio).order("id", { ascending: false }).limit(1).maybeSingle();
+  const { data: ns } = await db().from("glam_notificacoes").select("evento,status").in("evento", ["email_pedido_pago", "whatsapp_pedido_pago"]).eq("referencia", payload.pedido.codigo).gte("criado_em", inicio).order("id", { ascending: false }).limit(4);
   revalidatePath("/admin/pedidos");
-  if (n?.status === "enviado") return { ok: true, msg: `Ingressos reenviados para ${payload.cliente?.email}.` };
-  return { erro: "Não foi possível enviar o e-mail agora. Tente de novo em alguns minutos." };
+  const ok = (ev: string) => (ns || []).find((n) => n.evento === ev)?.status === "enviado";
+  const zap = ok("whatsapp_pedido_pago"), mail = ok("email_pedido_pago");
+  const temZap = !!numeroZap(payload.cliente?.whatsapp);
+  if (mail && zap) return { ok: true, msg: `Ingressos reenviados por e-mail e WhatsApp.` };
+  if (mail) return { ok: true, msg: temZap ? "Reenviado por e-mail. O WhatsApp falhou — confira se o WhatsApp da casa está conectado em Configurações." : `Reenviado por e-mail (o cliente não tem WhatsApp cadastrado).` };
+  if (zap) return { ok: true, msg: "Reenviado pelo WhatsApp. O e-mail falhou — tente de novo em alguns minutos." };
+  return { erro: "Não foi possível reenviar agora. Confira o WhatsApp da casa em Configurações e tente de novo." };
 }
 
 export async function confirmarManual(f: FormData) {

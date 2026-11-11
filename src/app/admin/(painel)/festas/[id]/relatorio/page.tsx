@@ -38,6 +38,7 @@ export default async function Relatorio({ params }: { params: Promise<{ id: stri
   return (
     <div className="mx-auto max-w-4xl">
       <div className="nao-imprimir mb-6 flex flex-wrap gap-2">
+        <a href={`/admin/relatorios/pdf?festa=${id}`} className="btn-ouro ouro-gradiente">Baixar relatório (PDF)</a>
         <Imprimir />
         <a href={`/admin/festas/${id}/relatorio/csv`} className="btn-linha">Baixar planilha (CSV)</a>
         <SairPara href={`/admin/festas/${id}`} rotulo="Voltar para a festa" />

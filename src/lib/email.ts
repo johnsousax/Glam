@@ -3,7 +3,7 @@ import { db } from "./supabase-admin";
 import { env } from "./env";
 import { decifrar } from "./crypto";
 import { montarEmails, type EmailMontado } from "./email-modelos";
-import { gerarIngressoPdf, nomeArquivo } from "./ingresso-pdf";
+import { pdfsDoPedido } from "./ingresso-pdf";
 
 /**
  * E-mails transacionais enviados direto pelo site (Resend).
@@ -50,16 +50,7 @@ export async function enviarEmailsDoEvento(evento: string, dados: Record<string,
     if (!emails.length) return "nada";
 
     if (evento === "pedido_pago" && Array.isArray(dados.ingressos)) {
-      const f = dados.festa || {};
-      const anexos = [];
-      let n = 0;
-      for (const i of dados.ingressos) {
-        n++;
-        const info = { nome: i.nome, codigo: i.codigo, setor: i.setor, lote: i.lote, festa: f.titulo, data: f.data, hora: f.hora, local: f.local, endereco: f.endereco, pedido: dados.pedido?.codigo };
-        const pdf = await gerarIngressoPdf(info, env.siteUrl);
-        anexos.push({ nome: nomeArquivo(info, n), base64: Buffer.from(pdf).toString("base64"), tipo: "application/pdf" });
-      }
-      emails[0].anexos = anexos;
+      emails[0].anexos = (await pdfsDoPedido(dados, env.siteUrl)).map((p) => ({ nome: p.nome, base64: p.base64, tipo: "application/pdf" }));
     }
 
     const remetente = dados.casa?.email_remetente || "GLAM House <ingressos@glamhouse.site>";

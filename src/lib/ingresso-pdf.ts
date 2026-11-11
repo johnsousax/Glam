@@ -77,3 +77,17 @@ export function nomeArquivo(i: IngressoPdf, n: number) {
   const base = limpo(`Ingresso ${n} - ${i.nome} - ${i.lote}`).replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").slice(0, 90);
   return `${base || `Ingresso ${n}`}.pdf`;
 }
+
+/** Um PDF por pessoa do pedido (usado no e-mail e no WhatsApp). */
+export async function pdfsDoPedido(dados: Record<string, any>, siteUrl: string) {
+  const f = dados.festa || {};
+  const out: { nome: string; base64: string; pessoa: string; lote: string }[] = [];
+  let n = 0;
+  for (const i of (Array.isArray(dados.ingressos) ? dados.ingressos : []) as any[]) {
+    n++;
+    const info: IngressoPdf = { nome: i.nome, codigo: i.codigo, setor: i.setor, lote: i.lote, festa: f.titulo, data: f.data, hora: f.hora, local: f.local, endereco: f.endereco, pedido: dados.pedido?.codigo };
+    const pdf = await gerarIngressoPdf(info, siteUrl);
+    out.push({ nome: nomeArquivo(info, n), base64: Buffer.from(pdf).toString("base64"), pessoa: limpo(i.nome), lote: limpo(i.lote) });
+  }
+  return out;
+}

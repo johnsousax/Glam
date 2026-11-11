@@ -18,9 +18,7 @@ ${ings.map(cartaoIngresso).join('')}
 <p style="font-size:13px;color:#a39d92">Pedido <b>${esc(b.pedido.codigo)}</b> · ${esc(b.pedido.total_fmt)}. Cada QR entra uma vez só — não compartilhe print. Você pode transferir um ingresso pela página dele.</p>
 <p align="center" style="text-align:center;margin-top:24px">${botao(b.meus_ingressos_url || site + '/meus-ingressos', 'Meus ingressos')}</p>`;
   email(c.email, (b.reenvio ? '[Reenvio] ' : '') + `Seus ingressos para ${f.titulo} ✨`, 'Ingressos confirmados', corpo);
-  zap(c.whatsapp, `✨ *GLAM* — pagamento aprovado!\n\nOi, ${(c.nome || '').split(' ')[0]}! Seus ingressos para *${f.titulo}* estão garantidos.\n📅 ${f.data} · ${f.hora}\n📍 ${f.local || 'GLAM House'}\n\n` +
-    ings.map((i, n) => `🎟️ ${n + 1}. ${i.nome} — ${i.setor}\n${i.url}`).join('\n\n') +
-    `\n\nPedido ${b.pedido.codigo}. Mostre o QR na portaria — cada um entra uma vez só. Te esperamos! 🥂`);
+  // WhatsApp do pedido pago (texto + PDFs) sai direto pelo site.
 }
 
 if (b.evento === 'acesso_link') {

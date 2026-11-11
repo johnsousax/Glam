@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/supabase-admin";
-import { exigirStaff } from "@/lib/staff";
+import { exigirStaff, pode } from "@/lib/staff";
 import { brl, dataCurta, dataLonga, hora } from "@/lib/format";
 import { Kpi, Titulo } from "@/components/admin/Titulo";
 
@@ -21,11 +21,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const trinta = new Date(hoje.getTime() - 29 * 864e5);
 
   const resumo = async (i: Date) => (await db().rpc("glam_resumo", { p_inicio: i.toISOString(), p_fim: agora.toISOString(), p_festa_id: null })).data as any;
-  const [rHoje, rSemana, rMes, serie, festas] = await Promise.all([
+  const [rHoje, rSemana, rMes, serie, festas, todasFestas] = await Promise.all([
     resumo(hoje), resumo(semana), resumo(mesIni),
     db().rpc("glam_faturamento_diario", { p_inicio: trinta.toISOString(), p_fim: agora.toISOString() }),
     db().from("glam_festas").select("id,titulo,data_inicio,lotacao,status").gte("data_inicio", new Date(Date.now() - 12 * 3600e3).toISOString()).neq("status", "cancelada").order("data_inicio").limit(6),
+    db().from("glam_festas").select("id,titulo,data_inicio").neq("status", "rascunho").order("data_inicio", { ascending: false }).limit(100),
   ]);
+  const verRelatorios = pode(staff, "relatorios");
 
   const dias: { dia: string; total: number }[] = [];
   const mapa = new Map<string, number>(((serie.data || []) as any[]).map((d) => [d.dia, Number(d.total)]));
@@ -67,6 +69,25 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           ))}
         </div>
       </section>
+
+      {verRelatorios && (
+        <section className="cartao mt-6 p-6">
+          <h2 className="text-xs uppercase tracking-[0.3em] text-fumaca">Baixar relatório em PDF</h2>
+          <p className="mt-1 text-sm text-fumaca">Faturamento, ingressos, portaria, pedidos e lotes — de uma festa ou de todas.</p>
+          <form action="/admin/relatorios/pdf" method="get" className="mt-4 grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end">
+            <div>
+              <label className="rotulo">Relatório</label>
+              <select name="festa" className="campo" defaultValue="">
+                <option value="">Geral da casa (todas as festas)</option>
+                {((todasFestas.data || []) as any[]).map((f) => <option key={f.id} value={f.id}>{f.titulo} · {dataCurta(f.data_inicio)}</option>)}
+              </select>
+            </div>
+            <div><label className="rotulo">De (só no geral)</label><input type="date" name="de" className="campo" /></div>
+            <div><label className="rotulo">Até (só no geral)</label><input type="date" name="ate" className="campo" /></div>
+            <button className="btn-ouro ouro-gradiente">Baixar PDF</button>
+          </form>
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="mb-4 text-xs uppercase tracking-[0.3em] text-fumaca">Próximas festas</h2>

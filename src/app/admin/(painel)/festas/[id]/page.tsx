@@ -37,6 +37,7 @@ export default async function EditarFesta({ params, searchParams }: { params: Pr
         <a href={`${env.siteUrl}/festa/${f.slug}`} target="_blank" className="btn-linha">Ver no site ↗</a>
         <Link href={`/admin/festas/${id}/lista`} className="btn-linha">Lista de nomes</Link>
         <Link href={`/admin/festas/${id}/relatorio`} className="btn-linha">Relatório</Link>
+        <a href={`/admin/relatorios/pdf?festa=${id}`} className="btn-linha">Relatório PDF</a>
         <Link href={`/portaria?festa=${id}`} className="btn-linha">Portaria</Link>
         <SairPara href="/admin/festas" rotulo="Voltar para as festas" />
       </Titulo>

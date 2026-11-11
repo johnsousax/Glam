@@ -78,3 +78,5 @@ Seções aplicadas: todas, exceto Jogos e Apps mobile, com **Pagamentos reforça
 - Todo disparo leva link de descadastro assinado (HMAC) e cabeçalho `List-Unsubscribe`; `/descadastrar` só aceita token válido.
 - CSV neutraliza células que começam com `= + - @` (injeção de fórmula).
 - Código de pareamento do WhatsApp: só staff com `config`, limite de 10 pedidos a cada 10 min, número validado (só dígitos, DDI 55).
+- Relatório em PDF (`/admin/relatorios/pdf`): `exigirStaff("relatorios")`, parâmetros validados (UUID/data), download registrado na auditoria, `cache-control: no-store`.
+- Ingressos pelo WhatsApp: o site chama o fluxo do WhatsApp da casa no n8n (endereço secreto); número normalizado (só dígitos, DDI 55), PDF em base64 validado e limitado no n8n; resultado registrado em `glam_notificacoes`.

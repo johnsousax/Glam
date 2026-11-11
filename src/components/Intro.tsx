@@ -32,9 +32,9 @@ export function Intro() {
       <div className="relative flex flex-col items-center px-6 text-center">
         <Logo dourado className="intro-logo w-[min(70vw,400px)]" />
         <div className="intro-raio linha-dourada mt-8 w-[min(80vw,480px)] origin-center" />
-        <p className="intro-frase mt-7 font-display text-[clamp(1.5rem,5vw,2.5rem)] italic leading-tight text-marfim/90">
+        <p className="intro-frase mt-7 whitespace-nowrap font-display text-[clamp(0.8rem,3.6vw,2rem)] font-semibold uppercase leading-tight tracking-[0.04em] text-marfim/90">
           {FRASE.map((p, i) => (
-            <span key={i} style={{ animationDelay: `${1.4 + i * 0.15}s` }} className={p === "amada" ? "texto-ouro" : ""}>{p}&nbsp;</span>
+            <span key={i} style={{ animationDelay: `${1.4 + i * 0.15}s` }} className={p === "amada" ? "texto-ouro" : ""}>{p}{i < FRASE.length - 1 ? "\u00a0" : ""}</span>
           ))}
         </p>
       </div>
