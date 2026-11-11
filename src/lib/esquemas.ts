@@ -21,7 +21,6 @@ export const CriarPedido = z.strictObject({
   idempotencia: z.string().uuid(),
   turnstile: z.string().max(4096).nullable().optional(),
   site: z.string().max(0).optional(), // honeypot: robô preenche, gente não vê
-  novidades: z.boolean().optional(), // aceite (opcional) de receber novidades por e-mail/WhatsApp
 });
 
 export const Pagar = z.discriminatedUnion("metodo", [

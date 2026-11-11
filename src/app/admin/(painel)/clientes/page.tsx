@@ -34,7 +34,7 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi rotulo="Clientes" valor={String(compradores.length)} sub={`${base.length} cadastrados`} />
         <Kpi rotulo="Voltaram (2+ compras)" valor={String(recorrentes)} sub={compradores.length ? `${Math.round((recorrentes / compradores.length) * 100)}% dos clientes` : undefined} />
-        <Kpi rotulo="Aceitam novidades" valor={String(aceitam)} sub="Podem receber disparos" />
+        <Kpi rotulo="Recebem disparos" valor={String(aceitam)} sub={base.length - aceitam ? `${base.length - aceitam} saíram da lista` : "Todos os clientes"} />
         <Kpi rotulo="Faturamento total" valor={brl(base.reduce((t, c) => t + Number(c.total_centavos), 0))} />
       </div>
 
@@ -44,13 +44,13 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
           <option value="0">Qualquer nº de compras</option><option value="1">1+ compras</option><option value="2">2+ compras</option><option value="3">3+ compras</option><option value="5">5+ compras</option>
         </select>
         <select name="festa" defaultValue={sp.festa || ""} className="campo"><option value="">Qualquer festa</option>{(festas || []).map((f: any) => <option key={f.id} value={f.id}>Foi na {f.titulo}</option>)}</select>
-        <select name="novidades" defaultValue={sp.novidades || ""} className="campo"><option value="">Todos</option><option value="1">Só quem aceita novidades</option></select>
+        <select name="novidades" defaultValue={sp.novidades || ""} className="campo"><option value="">Todos</option><option value="1">Só quem recebe disparos</option></select>
         <button className="btn-linha sm:col-span-5 sm:w-fit">Filtrar</button>
       </form>
 
       <div className="cartao mb-8 overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
-          <thead className="text-left text-xs text-fumaca"><tr className="border-b border-linha"><th className="p-3">Cliente</th><th>WhatsApp</th><th>Compras</th><th>Ingressos</th><th>Total gasto</th><th>Última compra</th><th>Novidades</th></tr></thead>
+          <thead className="text-left text-xs text-fumaca"><tr className="border-b border-linha"><th className="p-3">Cliente</th><th>WhatsApp</th><th>Compras</th><th>Ingressos</th><th>Total gasto</th><th>Última compra</th><th>Disparos</th></tr></thead>
           <tbody>
             {lista.map((c) => (
               <tr key={c.id} className="border-b border-linha/60 hover:bg-marfim/5">
@@ -60,7 +60,7 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
                 <td>{c.ingressos}</td>
                 <td>{brl(Number(c.total_centavos))}</td>
                 <td className="text-fumaca">{c.ultima_compra ? dataCurta(c.ultima_compra) : "—"}</td>
-                <td>{c.aceita_marketing ? <Selo cor="sucesso">sim</Selo> : <span className="text-fumaca">não</span>}</td>
+                <td>{c.aceita_marketing ? <Selo cor="sucesso">recebe</Selo> : <span className="text-fumaca">saiu da lista</span>}</td>
               </tr>
             ))}
             {lista.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-fumaca">Nenhum cliente encontrado.</td></tr>}

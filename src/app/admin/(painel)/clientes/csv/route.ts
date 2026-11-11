@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     p_busca: sp.get("q") || null, p_min_compras: Math.max(0, Number(sp.get("min")) || 0),
     p_festa_id: sp.get("festa") || null, p_so_marketing: sp.get("novidades") === "1", p_limite: 20000,
   });
-  const linhas = [["Nome", "E-mail", "WhatsApp", "Compras", "Ingressos", "Total (R$)", "Primeira compra", "Última compra", "Festas", "Aceita novidades"]];
+  const linhas = [["Nome", "E-mail", "WhatsApp", "Compras", "Ingressos", "Total (R$)", "Primeira compra", "Última compra", "Festas", "Recebe disparos"]];
   for (const c of (data || []) as any[]) {
     linhas.push([c.nome, c.email, c.whatsapp || "", c.compras, c.ingressos, (Number(c.total_centavos) / 100).toFixed(2).replace(".", ","),
       c.primeira_compra ? new Date(c.primeira_compra).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "",

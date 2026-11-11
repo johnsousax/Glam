@@ -25,7 +25,7 @@ export default async function Config() {
         <div className="cartao p-4"><p className="rotulo">Endereço do site</p><p className="truncate text-sm">{env.siteUrl}</p></div>
       </div>
       <Pagamentos />
-      <WhatsappConexao />
+      <WhatsappConexao numeroCasa={String(c.whatsapp_casa || "")} />
       <FormAcao acao={salvarConfig} className="cartao grid max-w-4xl gap-4 p-6 sm:grid-cols-2">
         {campo("nome", "Nome da casa")}
         {campo("slogan", "Slogan")}

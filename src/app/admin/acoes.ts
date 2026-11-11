@@ -385,18 +385,31 @@ export async function salvarConfig(_: Estado, f: FormData): Promise<Estado> {
 }
 
 // ---------------- WhatsApp da casa (Evolution via n8n) ----------------
-export type SituacaoWhatsapp = { ok: boolean; status: string; numero?: string; perfil?: string; base64?: string; erro?: string };
+export type SituacaoWhatsapp = { ok: boolean; status: string; numero?: string; perfil?: string; base64?: string; codigo?: string; erro?: string };
 
-export async function whatsappAcao(acao: "conectar" | "status" | "desconectar"): Promise<SituacaoWhatsapp> {
+/** Número com DDI 55 (aceita "98 9xxxx-xxxx", "+55 98…"). */
+function numeroWhatsapp(v: string) {
+  const d = v.replace(/\D/g, "");
+  if (d.length === 10 || d.length === 11) return `55${d}`;
+  return d.length >= 12 && d.length <= 13 ? d : "";
+}
+
+export async function whatsappAcao(acao: "conectar" | "codigo" | "status" | "desconectar", numeroInformado?: string): Promise<SituacaoWhatsapp> {
   const staff = await exigirStaff("config");
   const url = process.env.N8N_WHATSAPP_URL;
   if (!url) return { ok: false, status: "erro", erro: "Conexão do WhatsApp não configurada no servidor." };
-  if (!["conectar", "status", "desconectar"].includes(acao)) return { ok: false, status: "erro", erro: "Ação inválida." };
+  if (!["conectar", "codigo", "status", "desconectar"].includes(acao)) return { ok: false, status: "erro", erro: "Ação inválida." };
+  let numero = "";
+  if (acao === "codigo") {
+    if (!(await dentroDoLimite(`wa-codigo:${staff.id}`, 10, 600))) return { ok: false, status: "erro", erro: "Muitos códigos pedidos. Aguarde alguns minutos." };
+    numero = numeroWhatsapp(String(numeroInformado || ""));
+    if (!numero) return { ok: false, status: "erro", erro: "Digite o número do WhatsApp da casa com DDD." };
+  }
   try {
-    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ acao }), signal: AbortSignal.timeout(45000), cache: "no-store" });
+    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(numero ? { acao, numero } : { acao }), signal: AbortSignal.timeout(45000), cache: "no-store" });
     const j = (await r.json()) as SituacaoWhatsapp;
     if (acao !== "status") await auditar(staff, `whatsapp_${acao}`, "config", "whatsapp", { status: j.status });
-    return { ok: !!j.ok, status: String(j.status || ""), numero: j.numero, perfil: j.perfil, base64: j.base64, erro: j.erro };
+    return { ok: !!j.ok, status: String(j.status || ""), numero: j.numero, perfil: j.perfil, base64: acao === "codigo" ? undefined : j.base64, codigo: j.codigo || undefined, erro: j.erro };
   } catch (e) {
     return { ok: false, status: "erro", erro: falhaInterna("whatsapp", e).mensagem };
   }

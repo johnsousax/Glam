@@ -16,6 +16,7 @@ export default async function Privacidade() {
         <li><b>Nomes dos acompanhantes:</b> identificar cada ingresso na portaria.</li>
         <li><b>Dados do cartão:</b> não passam pelos nossos servidores — são criptografados no seu aparelho e enviados direto ao PagBank.</li>
         <li><b>Registros de acesso (IP, data e hora):</b> segurança e cumprimento do Marco Civil da Internet (guarda mínima de 6 meses).</li>
+        <li><b>Novidades da GLAM:</b> como cliente, você pode receber por e-mail avisos de próximas festas e promoções (legítimo interesse). Todo e-mail tem o link “não quero mais receber”, que tira você da lista na hora.</li>
         <li><b>Cookies de marketing (Meta):</b> só com o seu consentimento no aviso de cookies. Você pode recusar.</li>
       </ul>
       <h2>Com quem compartilhamos</h2>

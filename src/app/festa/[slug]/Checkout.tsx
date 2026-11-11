@@ -25,7 +25,6 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aceite, setAceite] = useState(false);
-  const [novidades, setNovidades] = useState(false);
   const [mel, setMel] = useState(""); // honeypot
   const idem = useRef<string>(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
 
@@ -61,7 +60,6 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
           idempotencia: idem.current,
           turnstile: tokenTurnstile(),
           site: mel,
-          novidades,
           itens: escolhidos.map((e) => ({
             lote_id: e.lote.id,
             quantidade: e.q,
@@ -197,11 +195,6 @@ export function Checkout({ festaId, festaTitulo, setores }: { festaId: string; f
           <label className="flex items-start gap-3 text-xs leading-relaxed text-fumaca">
             <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 accent-[#d4af6a]" />
             <span>Li e concordo com os <a href="/termos" target="_blank" className="underline">termos de compra</a> e a <a href="/privacidade" target="_blank" className="underline">política de privacidade</a>: o ingresso é pessoal, cada QR entra uma vez só e meus dados (CPF criptografado) são usados só para emitir e validar o ingresso.</span>
-          </label>
-
-          <label className="flex items-start gap-3 text-xs leading-relaxed text-fumaca">
-            <input type="checkbox" checked={novidades} onChange={(e) => setNovidades(e.target.checked)} className="mt-0.5 accent-[#d4af6a]" />
-            <span>Quero receber novidades, festas e promoções da GLAM por e-mail e WhatsApp. (Opcional — dá para sair a qualquer momento.)</span>
           </label>
 
           {erro && <p className="rounded-xl border border-perigo/40 bg-perigo/10 px-4 py-3 text-sm text-perigo">{erro}</p>}

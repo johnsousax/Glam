@@ -12,7 +12,7 @@ import { tokenDescadastro } from "@/lib/descadastro";
 type Estado = { ok?: boolean; erro?: string; msg?: string } | undefined;
 const txt = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
-/** Público do disparo: só quem aceitou novidades e não saiu da lista. */
+/** Público do disparo: clientes que não saíram da lista. */
 async function publico(f: FormData) {
   const festa = txt(f, "festa_id") || null;
   const min = Math.max(0, Math.floor(Number(txt(f, "min_compras")) || 0));
@@ -36,7 +36,7 @@ export async function enviarDisparo(_: Estado, f: FormData): Promise<Estado> {
   if (botaoUrl && !/^https:\/\/[^\s]+$/.test(botaoUrl)) return { erro: "O link do botão precisa começar com https://" };
   try {
     const { lista, filtros } = await publico(f);
-    if (!lista.length) return { erro: "Nenhum cliente nesse público aceitou receber novidades." };
+    if (!lista.length) return { erro: "Nenhum cliente nesse público." };
     const { data: d } = await db().from("glam_disparos").insert({ assunto, mensagem, publico: filtros, total: lista.length, criado_por: staff.id }).select("id").single();
     const casa = await configCasa();
     const msgs = lista.map((c) => {

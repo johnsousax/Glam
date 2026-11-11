@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import { FormAcao, Enviar } from "@/components/admin/ui";
 import { contarPublico, enviarDisparo } from "../../clientes-acoes";
 
-/** Disparo de novidades por e-mail para quem aceitou receber. */
+/** Disparo de novidades por e-mail para os clientes. */
 export function Disparo({ festas }: { festas: { id: string; titulo: string }[] }) {
   const [total, setTotal] = useState<number | null>(null);
   const [contando, iniciar] = useTransition();
@@ -15,12 +15,12 @@ export function Disparo({ festas }: { festas: { id: string; titulo: string }[] }
   return (
     <section className="max-w-3xl">
       <h2 className="mb-1 text-lg font-semibold">Disparo por e-mail</h2>
-      <p className="mb-3 text-sm text-fumaca">Vai só para quem marcou “quero receber novidades” na compra e não saiu da lista. Use {"{nome}"} para chamar a pessoa pelo nome.</p>
+      <p className="mb-3 text-sm text-fumaca">Vai para todos os clientes do público escolhido, menos quem clicou em “não quero mais receber”. Use {"{nome}"} para chamar a pessoa pelo nome.</p>
       <FormAcao acao={enviarDisparo} className="cartao space-y-3 p-5">
         <div className="grid gap-3 sm:grid-cols-2" onChange={(e) => contar((e.currentTarget as HTMLElement).closest("form"))}>
           <div><label className="rotulo">Público</label>
             <select name="min_compras" className="campo" defaultValue="0">
-              <option value="0">Todos que aceitam novidades</option><option value="1">Já compraram 1+ vez</option><option value="2">Compraram 2+ vezes</option><option value="3">Compraram 3+ vezes</option>
+              <option value="0">Todos os clientes</option><option value="1">Já compraram 1+ vez</option><option value="2">Compraram 2+ vezes</option><option value="3">Compraram 3+ vezes</option>
             </select>
           </div>
           <div><label className="rotulo">Festa</label>

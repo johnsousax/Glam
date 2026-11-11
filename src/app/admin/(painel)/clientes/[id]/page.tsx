@@ -32,7 +32,7 @@ export default async function Cliente({ params }: { params: Promise<{ id: string
         <Kpi rotulo="Compras pagas" valor={String(pagos.length)} />
         <Kpi rotulo="Total gasto" valor={brl(total)} />
         <Kpi rotulo="Cliente desde" valor={dataCurta(c.criado_em)} />
-        <Kpi rotulo="Novidades" valor={c.aceita_marketing && !c.descadastro_em ? "Aceita" : "Não aceita"} sub={c.descadastro_em ? `Saiu da lista em ${dataCurta(c.descadastro_em)}` : c.marketing_em ? `Desde ${dataCurta(c.marketing_em)}` : undefined} />
+        <Kpi rotulo="Disparos" valor={c.aceita_marketing && !c.descadastro_em ? "Recebe" : "Saiu da lista"} sub={c.descadastro_em ? `Em ${dataCurta(c.descadastro_em)}` : undefined} />
       </div>
       <p className="mb-6 text-sm text-fumaca">{c.email}{c.whatsapp ? ` · ${c.whatsapp}` : ""}</p>
       <h2 className="mb-2 text-sm font-semibold">Histórico de pedidos</h2>
