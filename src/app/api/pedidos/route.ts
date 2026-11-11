@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (!(await dentroDoLimite(`pedido:tel:${soDigitos(b.cliente.whatsapp)}`, 8, 3600))) return respostaLimite();
 
   try {
-    const clienteId = await salvarCliente(b.cliente);
+    const clienteId = await salvarCliente({ ...b.cliente, novidades: b.novidades === true });
     const acesso = novoAcesso();
     const { data, error } = await db().rpc("glam_criar_pedido_v2", {
       p_festa_id: b.festa_id,

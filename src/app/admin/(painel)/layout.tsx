@@ -8,6 +8,7 @@ const MENU = [
   { href: "/admin", t: "Visão geral", r: "dashboard" },
   { href: "/admin/festas", t: "Festas e lotes", r: "festas" },
   { href: "/admin/pedidos", t: "Pedidos", r: "pedidos" },
+  { href: "/admin/clientes", t: "Clientes e disparos", r: "clientes" },
   { href: "/admin/balcao", t: "Balcão e cortesias", r: "balcao" },
   { href: "/admin/cupons", t: "Cupons", r: "cupons" },
   { href: "/admin/promoters", t: "Promoters", r: "promoters" },

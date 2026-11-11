@@ -70,3 +70,10 @@ Seções aplicadas: todas, exceto Jogos e Apps mobile, com **Pagamentos reforça
 - [x] Política de privacidade, termos e consentimento de cookies/pixel publicados
 - [x] Alertas: login errado em massa, valor divergente, site fora do ar
 - [x] Preview protegido (Vercel Authentication); produção com chaves próprias
+
+## Clientes e disparos (10/11/2026)
+- `/admin/clientes`, ficha e CSV exigem `exigirStaff("clientes")` (dono e gerente); exportação fica na auditoria.
+- `glam_clientes_resumo` é `security definer` com `search_path` fixo e só `service_role` executa; `glam_disparos` com RLS fechado.
+- Disparos só para quem marcou "quero receber novidades" no checkout (consentimento com data em `marketing_em`, LGPD).
+- Todo disparo leva link de descadastro assinado (HMAC) e cabeçalho `List-Unsubscribe`; `/descadastrar` só aceita token válido.
+- CSV neutraliza células que começam com `= + - @` (injeção de fórmula).

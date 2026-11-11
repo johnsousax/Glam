@@ -76,3 +76,27 @@ export async function enviarEmailsDoEvento(evento: string, dados: Record<string,
     return "falhou";
   }
 }
+
+/** Envio em lote (até 100 por chamada) — usado nos disparos de novidades. */
+export async function enviarLoteEmails(mensagens: { para: string; assunto: string; html: string; sair: string }[], remetente: string) {
+  const k = await chaveResend();
+  if (!k) return { enviados: 0, falhas: mensagens.length, erro: "sem_chave" };
+  let enviados = 0, falhas = 0, erro = "";
+  for (let i = 0; i < mensagens.length; i += 100) {
+    const parte = mensagens.slice(i, i + 100);
+    try {
+      const r = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${k}`, "content-type": "application/json" },
+        body: JSON.stringify(parte.map((m) => ({
+          from: remetente, to: [m.para], subject: m.assunto, html: m.html,
+          headers: { "List-Unsubscribe": `<${m.sair}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+        }))),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (r.ok) enviados += parte.length;
+      else { falhas += parte.length; erro = `HTTP ${r.status}: ${(await r.text()).slice(0, 160)}`; }
+    } catch (e) { falhas += parte.length; erro = e instanceof Error ? e.message : String(e); }
+  }
+  return { enviados, falhas, erro };
+}

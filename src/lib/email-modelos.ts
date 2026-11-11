@@ -108,3 +108,12 @@ if (b.evento === 'backup' && emailValido(casa.email_dono) && b.base64) {
 }
   return out;
 }
+
+/** E-mail de disparo (novidades): texto livre, {nome} vira o primeiro nome, link para sair da lista. */
+export function montarDisparo(assunto: string, mensagem: string, nome: string, linkSair: string, siteUrl: string, botaoUrl?: string, botaoTexto?: string): string {
+  const primeiro = String(nome || '').split(' ')[0] || '';
+  const corpo = esc(mensagem.replace(/\{nome\}/gi, primeiro)).split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('')
+    + (botaoUrl ? `<p align="center" style="text-align:center;margin:28px 0">${botao(botaoUrl, botaoTexto || 'Ver festas')}</p>` : '')
+    + `<p style="font-size:11px;color:#a39d92;margin-top:28px">Você recebeu porque aceitou novidades da GLAM. <a href="${esc(linkSair)}" style="color:#a39d92">Não quero mais receber</a>.</p>`;
+  return moldura(esc(assunto), corpo, siteUrl);
+}

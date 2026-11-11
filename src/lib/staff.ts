@@ -12,6 +12,7 @@ export const PERMISSOES: Record<string, Papel[]> = {
   dashboard: ["dono", "gerente", "financeiro"],
   festas: ["dono", "gerente"],
   pedidos: ["dono", "gerente", "financeiro"],
+  clientes: ["dono", "gerente"],
   cancelar: ["dono", "gerente"],
   balcao: ["dono", "gerente"],
   cortesia: ["dono", "gerente"],
