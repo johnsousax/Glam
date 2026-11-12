@@ -12,7 +12,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
   const staff = await exigirStaff("pedidos");
   const sp = await searchParams;
   let q = db().from("glam_pedidos")
-    .select("id,codigo,status,canal,metodo,total_centavos,desconto_centavos,criado_em,pago_em,motivo_cancelamento,em_revisao,motivo_revisao, cliente:glam_clientes!inner(nome,email,whatsapp), festa:glam_festas(titulo), promoter:glam_promoters(nome), cupom:glam_cupons(codigo), itens:glam_pedido_itens(quantidade, lote:glam_lotes(nome))")
+    .select("id,codigo,status,canal,metodo,total_centavos,taxa_cartao_centavos,desconto_centavos,criado_em,pago_em,motivo_cancelamento,em_revisao,motivo_revisao, cliente:glam_clientes!inner(nome,email,whatsapp), festa:glam_festas(titulo), promoter:glam_promoters(nome), cupom:glam_cupons(codigo), itens:glam_pedido_itens(quantidade, lote:glam_lotes(nome))")
     .order("criado_em", { ascending: false }).limit(150);
   if (sp.festa) q = q.eq("festa_id", sp.festa);
   if (sp.status) q = q.eq("status", sp.status);
@@ -51,6 +51,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                   <p>{p.itens.map((i: any) => `${i.quantidade}× ${i.lote.nome}`).join(", ")}</p>
                   <p>{p.cliente.email} · {p.cliente.whatsapp || "sem WhatsApp"}</p>
                   <p>Canal: {p.canal} · Pagamento: {p.metodo || "—"}{p.pago_em ? ` · pago ${dataHora(p.pago_em)}` : ""}</p>
+                  {p.metodo === "cartao" && p.taxa_cartao_centavos > 0 && <p>Taxa do cartão paga pelo cliente: {brl(p.taxa_cartao_centavos)} (não entra no faturamento)</p>}
                   {p.cupom && <p>Cupom {p.cupom.codigo} (−{brl(p.desconto_centavos)})</p>}
                   {p.promoter && <p>Promoter: {p.promoter.nome}</p>}
                   {p.motivo_cancelamento && <p className="text-perigo">Cancelado: {p.motivo_cancelamento}</p>}

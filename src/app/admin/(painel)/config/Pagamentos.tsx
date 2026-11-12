@@ -1,20 +1,28 @@
-import { pagamentos } from "@/lib/gateways";
+import { calcularTaxaCartao, pagamentos } from "@/lib/gateways";
+import { brl } from "@/lib/format";
 import { Selo } from "@/components/admin/Titulo";
 import { FormAcao, Enviar, Confirmar } from "@/components/admin/ui";
-import { desconectarGateway, salvarPagbank } from "../../pagamentos-acoes";
+import { desconectarGateway, salvarCartao, salvarPagbank } from "../../pagamentos-acoes";
 
-/** Configurações › Pagamentos: SyncPay (Pix) e PagBank (Pix e cartão). */
+const virgula = (n: number) => String(n).replace(".", ",");
+
+/** Configurações › Pagamentos: PagBank (Pix e cartão) e a chave do cartão com taxa. */
 export async function Pagamentos() {
   const pg = await pagamentos();
-  const nome = { syncpay: "SyncPay", pagbank: "PagBank", demo: "nenhum (modo demonstração)" }[pg.pix];
+  const t = pg.taxaCartao;
+  const exemplo = 10000; // ingresso de R$ 100,00
+  const taxaExemplo = calcularTaxaCartao(exemplo, t);
   return (
-    <section className="mb-6 max-w-2xl">
-      <h2 className="mb-1 text-lg font-semibold">Pagamentos</h2>
-      <p className="mb-4 text-sm text-fumaca">Conecte a conta PagBank da casa para receber Pix e cartão direto nela.</p>
+    <section className="mb-6 max-w-2xl space-y-4">
+      <div>
+        <h2 className="mb-1 text-lg font-semibold">Pagamentos</h2>
+        <p className="text-sm text-fumaca">Todo o dinheiro cai na conta PagBank da casa: o Pix sai por ela e o cartão também.</p>
+      </div>
+
       <div className="cartao p-5">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h3 className="font-semibold">PagBank <span className="font-normal text-fumaca">· Pix e cartão</span></h3>
-          {pg.pagbank ? <Selo cor="sucesso">{pg.pagbank.ambiente === "production" ? "conectado" : "conectado (teste)"}{pg.finais.pagbank ? ` ···${pg.finais.pagbank}` : ""}</Selo> : <Selo cor="ouro">não conectado</Selo>}
+          {pg.pagbank ? <Selo cor="sucesso">{pg.pagbank.ambiente === "production" ? "conectado" : "conectado (teste)"}{pg.finalPagbank ? ` ···${pg.finalPagbank}` : ""}</Selo> : <Selo cor="ouro">não conectado</Selo>}
         </div>
         <FormAcao acao={salvarPagbank} className="space-y-3" limparAoSalvar>
           <div><label className="rotulo">Token do PagBank</label><input name="token" type="password" className="campo font-mono" autoComplete="new-password" required placeholder={pg.pagbank ? "Cole para trocar" : ""} /></div>
@@ -30,9 +38,39 @@ export async function Pagamentos() {
         {pg.pagbank && !pg.pagbankPeloServidor && (
           <form action={desconectarGateway} className="mt-3">
             <input type="hidden" name="gateway" value="pagbank" />
-            <Confirmar mensagem="Desconectar o PagBank?" className="text-xs text-fumaca underline hover:text-perigo">Desconectar</Confirmar>
+            <Confirmar mensagem="Desconectar o PagBank? O site para de cobrar até conectar de novo." className="text-xs text-fumaca underline hover:text-perigo">Desconectar</Confirmar>
           </form>
         )}
+      </div>
+
+      <div className="cartao p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="font-semibold">Cartão de crédito <span className="font-normal text-fumaca">· à vista</span></h3>
+          {pg.cartao ? <Selo cor="sucesso">ligado</Selo> : pg.cartaoLigado ? <Selo cor="ouro">ligado, falta conectar o PagBank</Selo> : <Selo cor="ouro">desligado</Selo>}
+        </div>
+        <FormAcao acao={salvarCartao} className="space-y-4">
+          <label className="flex cursor-pointer items-center gap-3 text-sm">
+            <input type="checkbox" name="cartao_ativo" defaultChecked={pg.cartaoLigado} className="h-4 w-4 accent-[var(--color-ouro)]" />
+            Aceitar cartão de crédito no site
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="rotulo">Taxa do cartão (%)</label>
+              <input name="taxa_pct" inputMode="decimal" className="campo" defaultValue={t.pct ? virgula(t.pct) : ""} placeholder="0" />
+              <p className="mt-1 text-xs text-fumaca">Somada sobre o valor dos ingressos. Ex.: 4,99</p>
+            </div>
+            <div>
+              <label className="rotulo">Valor fixo por compra (R$)</label>
+              <input name="taxa_fixa" inputMode="decimal" className="campo" defaultValue={t.fixaCentavos ? virgula(t.fixaCentavos / 100) : ""} placeholder="0,00" />
+              <p className="mt-1 text-xs text-fumaca">Opcional. Ex.: 0,50</p>
+            </div>
+          </div>
+          <p className="rounded-lg border border-linha px-3 py-2 text-xs text-fumaca">
+            Hoje, num ingresso de {brl(exemplo)}: <b className="text-marfim">{taxaExemplo ? `o cliente paga ${brl(exemplo + taxaExemplo)} no cartão (taxa de ${brl(taxaExemplo)})` : `o cliente paga ${brl(exemplo)} no cartão (sem taxa)`}</b> e {brl(exemplo)} no Pix.
+            O cliente vê a taxa antes de pagar. A taxa não entra no faturamento dos relatórios.
+          </p>
+          <Enviar>Salvar cartão</Enviar>
+        </FormAcao>
       </div>
     </section>
   );

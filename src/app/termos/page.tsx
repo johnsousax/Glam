@@ -17,6 +17,7 @@ export default async function Termos() {
       <h2>Pagamento e reserva</h2>
       <ul>
         <li>Pagamento por Pix ou cartão de crédito à vista, processado pelo PagBank.</li>
+        <li>Se a casa cobrar uma taxa no cartão, o valor da taxa e o total aparecem antes de você pagar. No Pix não há taxa.</li>
         <li>O ingresso fica reservado por 15 minutos enquanto o pagamento não é confirmado. Depois disso, volta para a venda.</li>
         <li>O ingresso só é emitido depois que o PagBank confirma o pagamento.</li>
       </ul>

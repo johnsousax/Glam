@@ -30,6 +30,8 @@ export const Pagar = z.discriminatedUnion("metodo", [
     cartao_criptografado: z.string().max(4096).nullable(),
     titular_nome: z.string().trim().min(3).max(30),
     titular_cpf: cpf,
+    /** Taxa do cartão que o cliente viu na tela (centavos). Se mudou, o servidor recusa e pede para recarregar. */
+    taxa_exibida: z.number().int().min(0).max(10_000_000),
   }),
 ]);
 

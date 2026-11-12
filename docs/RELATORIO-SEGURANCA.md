@@ -94,3 +94,11 @@ Achados por ordem de risco:
 ## Desempenho sem abrir mão da segurança (11/11/2026)
 - Sessão da equipe conferida com `getClaims()`: assinatura ES256 verificada localmente (chave pública do Supabase), sem ida ao servidor de login a cada clique. Conta desativada continua barrada na hora porque `glam_staff.ativo` é lido em toda requisição; logout e inatividade de 30 min seguem iguais.
 - Rate limit, Turnstile e antifraude rodam em paralelo (as mesmas regras, menos espera).
+
+## PagBank único e cartão com taxa (12/11/2026)
+- SyncPay removida: biblioteca, webhook `/api/webhooks/syncpay`, credenciais cifradas (`glam_segredos`) e avisos recebidos apagados. Menos uma superfície exposta e um segredo a menos para guardar. Pedidos antigos mantêm `gateway = 'syncpay'` só como histórico.
+- Pix e cartão saem só pelo PagBank; o webhook continua com token secreto na URL, assinatura `x-authenticity-token` quando vem, aviso processado uma vez só e reconsulta do pedido na API do PagBank.
+- Cartão ligado/desligado em Configurações › Pagamentos (`exigirStaff("config")`, ação auditada como `gateway_alterado`, sem credencial no log). Desligado: a rota de pagamento recusa cartão e a chave pública do cartão não é entregue.
+- Taxa do cartão (% + valor fixo, limites de 0–30 % e R$ 0–50): **sempre calculada no servidor**. O navegador só devolve o valor que o cliente viu (`taxa_exibida`); se divergir (taxa alterada no meio da compra), o servidor responde 409 e pede para recarregar. A taxa fica gravada no pedido (`taxa_cartao_centavos`) antes da cobrança e a liberação do ingresso só acontece se o valor pago for exatamente ingressos + taxa (Pix: só ingressos); qualquer diferença vai para revisão com alerta ao dono.
+- A taxa não entra no faturamento dos relatórios (cobre o custo do cartão); aparece no pedido, no painel.
+- Aviso ao cliente nos Termos: taxa mostrada antes de pagar; Pix sem taxa.

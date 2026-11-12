@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase-admin";
-import { pagamentos } from "@/lib/gateways";
-import { criarPixSyncpay } from "@/lib/syncpay";
+import { calcularTaxaCartao, pagamentos } from "@/lib/gateways";
 import { decifrar } from "@/lib/crypto";
 import { criarCartao, criarPix, type DadosCobranca } from "@/lib/pagbank";
 import { confirmarPagamento, confirmarPagamentoGateway } from "@/lib/pedidos";
@@ -60,11 +59,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         await db().from("glam_pedidos").update({ metodo: "pix", gateway: "demo", pix_copia_cola: copia }).eq("id", id);
         return NextResponse.json({ status: "pendente", copia_cola: copia, qr_url: null, expira_em: p.expira_em, demo: true });
       }
-      if (pg.pix === "syncpay") {
-        const sp = await criarPixSyncpay(cobranca);
-        await db().from("glam_pedidos").update({ metodo: "pix", gateway: "syncpay", gateway_tx_id: sp.id, pix_copia_cola: sp.copiaCola }).eq("id", id);
-        return NextResponse.json({ status: "pendente", copia_cola: sp.copiaCola, qr_url: null, expira_em: p.expira_em });
-      }
       const pix = await criarPix(cobranca, new Date(p.expira_em));
       await db().from("glam_pedidos").update({ metodo: "pix", gateway: "pagbank", gateway_tx_id: pix.orderId, pagbank_order_id: pix.orderId, pix_copia_cola: pix.copiaCola, pix_qr_url: pix.qrUrl }).eq("id", id);
       return NextResponse.json({ status: "pendente", copia_cola: pix.copiaCola, qr_url: pix.qrUrl, expira_em: p.expira_em });
@@ -74,15 +68,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (b.metodo !== "cartao") return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });
     const titularNome = b.titular_nome;
     const titularCpf = b.titular_cpf;
+    if (!pg.cartaoLigado) return NextResponse.json({ erro: "Pagamento com cartão indisponível. Use o Pix." }, { status: 400 });
+    // A taxa é sempre calculada aqui; o cliente só confirma o valor que viu na tela.
+    const taxa = calcularTaxaCartao(p.total_centavos, pg.taxaCartao);
+    if (b.taxa_exibida !== taxa) {
+      return NextResponse.json({ erro: "O valor do cartão foi atualizado. Recarregue a página para ver o total certo." }, { status: 409 });
+    }
     if (pg.demo) {
-      await db().from("glam_pedidos").update({ metodo: "cartao", gateway: "demo" }).eq("id", id);
+      await db().from("glam_pedidos").update({ metodo: "cartao", gateway: "demo", taxa_cartao_centavos: taxa }).eq("id", id);
       await confirmarPagamento(p.id, "DEMO", "cartao");
       return NextResponse.json({ status: "pago", demo: true });
     }
     if (!pg.cartao) return NextResponse.json({ erro: "Pagamento com cartão indisponível. Use o Pix." }, { status: 400 });
     if (!b.cartao_criptografado) return NextResponse.json({ erro: "Dados do cartão inválidos." }, { status: 400 });
-    const r = await criarCartao(cobranca, String(b.cartao_criptografado), { nome: titularNome, cpf: titularCpf });
-    await db().from("glam_pedidos").update({ metodo: "cartao", gateway: "pagbank", gateway_tx_id: r.orderId, pagbank_order_id: r.orderId, pagbank_charge_id: r.chargeId }).eq("id", id);
+    // O PagBank exige soma dos itens = total: ingressos + taxa em itens separados
+    const cobrancaCartao: DadosCobranca = {
+      ...cobranca,
+      totalCentavos: p.total_centavos + taxa,
+      itens: [...cobranca.itens, ...(taxa > 0 ? [{ referencia: `${p.codigo}-taxa`, nome: "Taxa do cartão", quantidade: 1, unitarioCentavos: taxa }] : [])],
+    };
+    // Grava a taxa ANTES de cobrar: a confirmação só libera se o valor pago = ingressos + taxa
+    await db().from("glam_pedidos").update({ metodo: "cartao", gateway: "pagbank", taxa_cartao_centavos: taxa }).eq("id", id);
+    const r = await criarCartao(cobrancaCartao, String(b.cartao_criptografado), { nome: titularNome, cpf: titularCpf });
+    await db().from("glam_pedidos").update({ gateway_tx_id: r.orderId, pagbank_order_id: r.orderId, pagbank_charge_id: r.chargeId }).eq("id", id);
     if (r.status === "PAID") {
       const ok = await confirmarPagamentoGateway(p.id, r.valorPago, r.chargeId, "cartao");
       return NextResponse.json(ok ? { status: "pago" } : { status: "analise", mensagem: "Pagamento em análise. Você recebe o ingresso assim que for conferido." });

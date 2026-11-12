@@ -75,18 +75,20 @@ export async function payloadNotificacao(pedidoId: string) {
 }
 
 /**
- * Pagamento vindo do gateway: só libera se o valor pago for exatamente o total do pedido.
+ * Pagamento vindo do gateway: só libera se o valor pago for exatamente o esperado:
+ * o total do pedido (Pix) ou o total + a taxa do cartão gravada no pedido (cartão).
  * Valor divergente = pedido vai para revisão e o dono recebe alerta.
  */
 export async function confirmarPagamentoGateway(pedidoId: string, valorPago: number, chargeId?: string | null, metodo?: string | null) {
-  const { data: p } = await db().from("glam_pedidos").select("codigo,total_centavos,status").eq("id", pedidoId).single();
+  const { data: p } = await db().from("glam_pedidos").select("codigo,total_centavos,taxa_cartao_centavos,status").eq("id", pedidoId).single();
   if (!p) return null;
-  if (valorPago !== p.total_centavos) {
-    await db().from("glam_pedidos").update({ em_revisao: true, motivo_revisao: `Valor pago ${valorPago} ≠ total ${p.total_centavos}` }).eq("id", pedidoId);
+  const esperado = p.total_centavos + (metodo === "cartao" ? p.taxa_cartao_centavos || 0 : 0);
+  if (valorPago !== esperado) {
+    await db().from("glam_pedidos").update({ em_revisao: true, motivo_revisao: `Valor pago ${valorPago} ≠ esperado ${esperado}` }).eq("id", pedidoId);
     const casa = await configCasa();
     await dispararN8n("alerta_seguranca", {
       casa: { whatsapp_dono: casa.whatsapp_dono, email_dono: casa.email_dono, email_remetente: casa.email_remetente, evolution_instancia: casa.evolution_instancia },
-      texto: `⚠️ Pedido ${p.codigo}: valor pago (${brl(valorPago)}) diferente do total (${brl(p.total_centavos)}). Ingressos NÃO liberados — revise no painel.`,
+      texto: `⚠️ Pedido ${p.codigo}: valor pago (${brl(valorPago)}) diferente do esperado (${brl(esperado)}). Ingressos NÃO liberados — revise no painel.`,
     }, p.codigo);
     return null;
   }

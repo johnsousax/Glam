@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { brl } from "@/lib/format";
 
 declare global { interface Window { PagSeguro?: any } }
 
@@ -15,7 +16,7 @@ function useRelogio(expiraEm: string) {
   return { resta, texto: `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` };
 }
 
-export function Pagamento({ pedidoId, expiraEm, demo, cartao, nomeCliente }: { pedidoId: string; expiraEm: string; demo: boolean; cartao: boolean; nomeCliente: string }) {
+export function Pagamento({ pedidoId, expiraEm, demo, cartao, nomeCliente, totalCentavos, taxaCartao }: { pedidoId: string; expiraEm: string; demo: boolean; cartao: boolean; nomeCliente: string; totalCentavos: number; taxaCartao: number }) {
   const router = useRouter();
   const relogio = useRelogio(expiraEm);
   const [aba, setAba] = useState<"pix" | "cartao">("pix");
@@ -105,18 +106,19 @@ export function Pagamento({ pedidoId, expiraEm, demo, cartao, nomeCliente }: { p
                 <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-ouro" /> Aguardando o pagamento… esta tela atualiza sozinha.
               </p>
               {demo && <button onClick={simular} disabled={carregando} className="btn-linha w-full">Simular pagamento aprovado</button>}
+              {cartao && taxaCartao > 0 && <p className="text-xs text-sucesso">No Pix você não paga taxa.</p>}
             </>
           )}
           {erro && <p className="text-sm text-perigo">{erro} <button className="underline" onClick={gerarPix}>Tentar de novo</button></p>}
         </div>
       ) : (
-        <Cartao pedidoId={pedidoId} demo={demo} nomeCliente={nomeCliente} onErro={setErro} onAviso={setAviso} erro={erro} aviso={aviso} />
+        <Cartao pedidoId={pedidoId} demo={demo} nomeCliente={nomeCliente} totalCentavos={totalCentavos} taxaCartao={taxaCartao} onErro={setErro} onAviso={setAviso} erro={erro} aviso={aviso} />
       )}
     </section>
   );
 }
 
-function Cartao({ pedidoId, demo, nomeCliente, onErro, onAviso, erro, aviso }: { pedidoId: string; demo: boolean; nomeCliente: string; onErro: (s: string | null) => void; onAviso: (s: string | null) => void; erro: string | null; aviso: string | null }) {
+function Cartao({ pedidoId, demo, nomeCliente, totalCentavos, taxaCartao, onErro, onAviso, erro, aviso }: { pedidoId: string; demo: boolean; nomeCliente: string; totalCentavos: number; taxaCartao: number; onErro: (s: string | null) => void; onAviso: (s: string | null) => void; erro: string | null; aviso: string | null }) {
   const router = useRouter();
   const [f, setF] = useState({ numero: "", validade: "", cvv: "", nome: nomeCliente.toUpperCase(), cpf: "" });
   const [enviando, setEnviando] = useState(false);
@@ -150,7 +152,7 @@ function Cartao({ pedidoId, demo, nomeCliente, onErro, onAviso, erro, aviso }: {
     try {
       const r = await fetch(`/api/pedidos/${pedidoId}/pagar`, {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ metodo: "cartao", cartao_criptografado: criptografado, titular_nome: f.nome, titular_cpf: f.cpf }),
+        body: JSON.stringify({ metodo: "cartao", cartao_criptografado: criptografado, titular_nome: f.nome, titular_cpf: f.cpf, taxa_exibida: taxaCartao }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.erro);
@@ -173,7 +175,15 @@ function Cartao({ pedidoId, demo, nomeCliente, onErro, onAviso, erro, aviso }: {
       <div><label className="rotulo">CPF do titular</label><input className="campo" inputMode="numeric" value={f.cpf} onChange={(e) => setF({ ...f, cpf: e.target.value.replace(/\D/g, "").slice(0, 11) })} required /></div>
       {erro && <p className="rounded-xl border border-perigo/40 bg-perigo/10 px-4 py-3 text-sm text-perigo">{erro}</p>}
       {aviso && <p className="rounded-xl border border-ouro/40 bg-ouro/10 px-4 py-3 text-sm text-ouro-claro">{aviso}</p>}
-      <button disabled={enviando} className="btn-ouro ouro-gradiente w-full !py-4">{enviando ? "Processando…" : "Pagar com cartão"}</button>
+      {taxaCartao > 0 && (
+        <div className="space-y-1 rounded-xl border border-linha bg-noir/40 px-4 py-3 text-sm">
+          <div className="flex justify-between text-fumaca"><span>Ingressos</span><span>{brl(totalCentavos)}</span></div>
+          <div className="flex justify-between text-fumaca"><span>Taxa do cartão</span><span>{brl(taxaCartao)}</span></div>
+          <div className="flex justify-between font-semibold text-marfim"><span>Total no cartão</span><span>{brl(totalCentavos + taxaCartao)}</span></div>
+          <p className="pt-1 text-xs text-fumaca/80">Quer evitar a taxa? Pague com Pix.</p>
+        </div>
+      )}
+      <button disabled={enviando} className="btn-ouro ouro-gradiente w-full !py-4">{enviando ? "Processando…" : `Pagar ${brl(totalCentavos + taxaCartao)} com cartão`}</button>
       <p className="text-center text-[0.65rem] uppercase tracking-[0.2em] text-fumaca/70">🔒 Cartão criptografado no seu aparelho pelo PagBank · à vista</p>
     </form>
   );
