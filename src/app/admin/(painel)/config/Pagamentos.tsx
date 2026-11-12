@@ -2,11 +2,11 @@ import { calcularTaxaCartao, pagamentos } from "@/lib/gateways";
 import { brl } from "@/lib/format";
 import { Selo } from "@/components/admin/Titulo";
 import { FormAcao, Enviar, Confirmar } from "@/components/admin/ui";
-import { desconectarGateway, salvarCartao, salvarPagbank } from "../../pagamentos-acoes";
+import { desconectarGateway, escolherPix, salvarCartao, salvarPagbank, salvarSyncpay } from "../../pagamentos-acoes";
 
 const virgula = (n: number) => String(n).replace(".", ",");
 
-/** Configurações › Pagamentos: PagBank (Pix e cartão) e a chave do cartão com taxa. */
+/** Configurações › Pagamentos: gateway do Pix (SyncPay ou PagBank), PagBank para cartão e a taxa do cartão. */
 export async function Pagamentos() {
   const pg = await pagamentos();
   const t = pg.taxaCartao;
@@ -16,7 +16,45 @@ export async function Pagamentos() {
     <section className="mb-6 max-w-2xl space-y-4">
       <div>
         <h2 className="mb-1 text-lg font-semibold">Pagamentos</h2>
-        <p className="text-sm text-fumaca">Todo o dinheiro cai na conta PagBank da casa: o Pix sai por ela e o cartão também.</p>
+        <p className="text-sm text-fumaca">Escolha por onde o Pix é recebido. O cartão é sempre pelo PagBank.</p>
+      </div>
+
+      <div className="cartao p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="font-semibold">Gateway do Pix</h3>
+          <Selo cor={pg.demo ? "ouro" : "sucesso"}>{pg.pix === "syncpay" ? "Pix pela SyncPay" : pg.pix === "pagbank" ? "Pix pelo PagBank" : "nenhum conectado"}</Selo>
+        </div>
+        <FormAcao acao={escolherPix} className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(["syncpay", "pagbank"] as const).map((g) => (
+              <label key={g} className="flex cursor-pointer items-center gap-3 rounded-lg border border-linha px-3 py-3 text-sm">
+                <input type="radio" name="pix_gateway" value={g} defaultChecked={pg.preferido === g} className="accent-[var(--color-ouro)]" />
+                <span>{g === "syncpay" ? "SyncPay" : "PagBank"} <span className="text-xs text-fumaca">{pg[g] ? "· conectado" : "· não conectado"}</span></span>
+              </label>
+            ))}
+          </div>
+          {pg.preferido !== pg.pix && !pg.demo && <p className="text-xs text-ouro">O escolhido não está conectado; o Pix está saindo pelo {pg.pix === "syncpay" ? "SyncPay" : "PagBank"}.</p>}
+          <Enviar>Usar este gateway</Enviar>
+        </FormAcao>
+      </div>
+
+      <div className="cartao p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="font-semibold">SyncPay <span className="font-normal text-fumaca">· Pix</span></h3>
+          {pg.syncpay ? <Selo cor="sucesso">conectada{pg.finalSyncpay ? ` ···${pg.finalSyncpay}` : ""}</Selo> : <Selo cor="ouro">não conectada</Selo>}
+        </div>
+        <FormAcao acao={salvarSyncpay} className="space-y-3" limparAoSalvar>
+          <div><label className="rotulo">Client ID</label><input name="client_id" className="campo font-mono" autoComplete="off" required placeholder={pg.syncpay ? "Cole para trocar" : ""} /></div>
+          <div><label className="rotulo">Client Secret</label><input name="client_secret" type="password" className="campo font-mono" autoComplete="new-password" required /></div>
+          <p className="text-xs text-fumaca">Na SyncPay: Configurações › Chaves de API. As chaves são testadas antes de salvar e ficam criptografadas.</p>
+          <Enviar>{pg.syncpay ? "Trocar chaves da SyncPay" : "Conectar SyncPay"}</Enviar>
+        </FormAcao>
+        {pg.syncpay && (
+          <form action={desconectarGateway} className="mt-3">
+            <input type="hidden" name="gateway" value="syncpay" />
+            <Confirmar mensagem="Desconectar a SyncPay?" className="text-xs text-fumaca underline hover:text-perigo">Desconectar</Confirmar>
+          </form>
+        )}
       </div>
 
       <div className="cartao p-5">

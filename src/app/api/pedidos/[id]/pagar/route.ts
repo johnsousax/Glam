@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase-admin";
 import { calcularTaxaCartao, pagamentos } from "@/lib/gateways";
+import { criarPixSyncpay } from "@/lib/syncpay";
 import { decifrar } from "@/lib/crypto";
 import { criarCartao, criarPix, type DadosCobranca } from "@/lib/pagbank";
 import { confirmarPagamento, confirmarPagamentoGateway } from "@/lib/pedidos";
@@ -58,6 +59,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         const copia = `00020126DEMO-GLAM-${p.codigo}-PIX-SIMULADO5204000053039865802BR5909GLAM HOUSE6009SAO LUIS62070503***6304DEMO`;
         await db().from("glam_pedidos").update({ metodo: "pix", gateway: "demo", pix_copia_cola: copia }).eq("id", id);
         return NextResponse.json({ status: "pendente", copia_cola: copia, qr_url: null, expira_em: p.expira_em, demo: true });
+      }
+      if (pg.pix === "syncpay") {
+        const sp = await criarPixSyncpay(cobranca);
+        await db().from("glam_pedidos").update({ metodo: "pix", gateway: "syncpay", gateway_tx_id: sp.id, pix_copia_cola: sp.copiaCola }).eq("id", id);
+        return NextResponse.json({ status: "pendente", copia_cola: sp.copiaCola, qr_url: null, expira_em: p.expira_em });
       }
       const pix = await criarPix(cobranca, new Date(p.expira_em));
       await db().from("glam_pedidos").update({ metodo: "pix", gateway: "pagbank", gateway_tx_id: pix.orderId, pagbank_order_id: pix.orderId, pix_copia_cola: pix.copiaCola, pix_qr_url: pix.qrUrl }).eq("id", id);

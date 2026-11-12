@@ -1,7 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { auditar, exigirStaff } from "@/lib/staff";
-import { guardarCredencial, removerCredencial, salvarConfigCartao, TAXA_FIXA_MAX_CENTAVOS, TAXA_PCT_MAX } from "@/lib/gateways";
+import { guardarCredencial, pagamentos, removerCredencial, salvarConfigCartao, salvarPreferenciaPix, TAXA_FIXA_MAX_CENTAVOS, TAXA_PCT_MAX } from "@/lib/gateways";
+import { tokenSyncpay } from "@/lib/syncpay";
 import { brl } from "@/lib/format";
 import { enviarEmail, esquecerChaveEmail } from "@/lib/email";
 import { configCasa } from "@/lib/config";
@@ -9,6 +10,38 @@ import { dentroDoLimite, falhaInterna } from "@/lib/seguranca";
 
 type Estado = { ok?: boolean; erro?: string; msg?: string } | undefined;
 const txt = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
+
+/** SyncPay: testa as credenciais na própria SyncPay antes de guardar (cifradas) e passa a receber o Pix. */
+export async function salvarSyncpay(_: Estado, f: FormData): Promise<Estado> {
+  const staff = await exigirStaff("config");
+  if (!(await dentroDoLimite(`gateway:${staff.id}`, 10, 900))) return { erro: "Muitas tentativas. Aguarde alguns minutos." };
+  const clientId = txt(f, "client_id"), clientSecret = txt(f, "client_secret");
+  if (clientId.length < 8 || clientId.length > 200 || clientSecret.length < 8 || clientSecret.length > 300) return { erro: "Cole o Client ID e o Client Secret da SyncPay." };
+  try {
+    await tokenSyncpay({ clientId, clientSecret }, true);
+  } catch {
+    return { erro: "A SyncPay recusou essas credenciais. Confira se copiou o Client ID e o Client Secret certos e se a chave de API está ativa." };
+  }
+  try {
+    await guardarCredencial("syncpay", { clientId, clientSecret }, staff.id);
+    await salvarPreferenciaPix("syncpay");
+  } catch (e) { return { erro: falhaInterna("painel", e).mensagem }; }
+  await auditar(staff, "gateway_alterado", "config", "syncpay");
+  revalidatePath("/admin/config");
+  return { ok: true, msg: "SyncPay conectada. O Pix do site já sai por ela." };
+}
+
+/** Escolhe quem gera o Pix (SyncPay ou PagBank). */
+export async function escolherPix(_: Estado, f: FormData): Promise<Estado> {
+  const staff = await exigirStaff("config");
+  const g = txt(f, "pix_gateway") === "pagbank" ? "pagbank" : "syncpay";
+  const pg = await pagamentos();
+  if (!pg[g]) return { erro: `Conecte ${g === "syncpay" ? "a SyncPay" : "o PagBank"} antes de escolher.` };
+  try { await salvarPreferenciaPix(g); } catch (e) { return { erro: falhaInterna("painel", e).mensagem }; }
+  await auditar(staff, "gateway_alterado", "config", "pix", { pix_gateway: g });
+  revalidatePath("/admin/config");
+  return { ok: true, msg: `O Pix agora é recebido pel${g === "syncpay" ? "a SyncPay" : "o PagBank"}.` };
+}
 
 /** PagBank: valida o token pedindo a chave pública do cartão antes de guardar. */
 export async function salvarPagbank(_: Estado, f: FormData): Promise<Estado> {
@@ -32,7 +65,7 @@ export async function salvarPagbank(_: Estado, f: FormData): Promise<Estado> {
   } catch (e) { return { erro: falhaInterna("painel", e).mensagem }; }
   await auditar(staff, "gateway_alterado", "config", "pagbank", { ambiente });
   revalidatePath("/admin/config");
-  return { ok: true, msg: "PagBank conectado. O Pix do site já sai por ele." };
+  return { ok: true, msg: "PagBank conectado. O cartão já pode ser usado; o Pix sai pelo gateway escolhido acima." };
 }
 
 /** Número digitado no painel ("4,99", "0.50", "R$ 1,50") → número, ou null se não for válido. */
@@ -61,7 +94,7 @@ export async function salvarCartao(_: Estado, f: FormData): Promise<Estado> {
 export async function desconectarGateway(f: FormData) {
   const staff = await exigirStaff("config");
   const v = txt(f, "gateway");
-  const g = v === "resend" ? "resend" : "pagbank";
+  const g = v === "resend" ? "resend" : v === "syncpay" ? "syncpay" : "pagbank";
   await removerCredencial(g);
   if (g === "resend") esquecerChaveEmail();
   await auditar(staff, "gateway_removido", "config", g);
