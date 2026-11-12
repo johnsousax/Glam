@@ -10,6 +10,9 @@ import { dentroDoLimite, falhaInterna, ipDe, origemValida, respostaLimite } from
 
 export const dynamic = "force-dynamic";
 
+/** O PagBank responde "whitelist access required" quando a conta ainda não tem a API de Pedidos liberada em produção. */
+const pagbankSemLiberacao = (e: unknown) => /whitelist|ACCESS_DENIED/i.test(e instanceof Error ? e.message : String(e));
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ erro: "Pedido inválido." }, { status: 400 });
@@ -60,12 +63,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         await db().from("glam_pedidos").update({ metodo: "pix", gateway: "demo", pix_copia_cola: copia }).eq("id", id);
         return NextResponse.json({ status: "pendente", copia_cola: copia, qr_url: null, expira_em: p.expira_em, demo: true });
       }
-      if (pg.pix === "syncpay") {
+      // PagBank sem a API de Pedidos liberada ("whitelist"): cai para a SyncPay se ela estiver conectada
+      let usarSyncpay = pg.pix === "syncpay";
+      let pix: Awaited<ReturnType<typeof criarPix>> | null = null;
+      if (!usarSyncpay) {
+        try { pix = await criarPix(cobranca, new Date(p.expira_em)); }
+        catch (e) {
+          if (!(pagbankSemLiberacao(e) && pg.syncpay)) throw e;
+          falhaInterna("pagbank_sem_liberacao", e);
+          usarSyncpay = true;
+        }
+      }
+      if (usarSyncpay) {
         const sp = await criarPixSyncpay(cobranca);
         await db().from("glam_pedidos").update({ metodo: "pix", gateway: "syncpay", gateway_tx_id: sp.id, pix_copia_cola: sp.copiaCola }).eq("id", id);
         return NextResponse.json({ status: "pendente", copia_cola: sp.copiaCola, qr_url: null, expira_em: p.expira_em });
       }
-      const pix = await criarPix(cobranca, new Date(p.expira_em));
+      if (!pix) throw new Error("Pix não gerado");
       await db().from("glam_pedidos").update({ metodo: "pix", gateway: "pagbank", gateway_tx_id: pix.orderId, pagbank_order_id: pix.orderId, pix_copia_cola: pix.copiaCola, pix_qr_url: pix.qrUrl }).eq("id", id);
       return NextResponse.json({ status: "pendente", copia_cola: pix.copiaCola, qr_url: pix.qrUrl, expira_em: p.expira_em });
     }
@@ -107,6 +121,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ erro: r.motivo ? `Cartão recusado: ${r.motivo}` : "Cartão recusado. Tente outro cartão ou pague com Pix." }, { status: 402 });
   } catch (e) {
     const f = falhaInterna("pagar", e);
+    if (pagbankSemLiberacao(e)) {
+      return NextResponse.json({ erro: metodo === "cartao" ? "Pagamento com cartão indisponível no momento. Use o Pix." : `O Pix está indisponível no momento. Avise a GLAM. (${f.ref})` }, { status: 503 });
+    }
     return NextResponse.json({ erro: `Não foi possível gerar o pagamento agora. Tente de novo. (${f.ref})` }, { status: 502 });
   }
 }
